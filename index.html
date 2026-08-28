@@ -16,9 +16,24 @@
     --line:#ECE2FB; --danger:#FF6F6F; --shadow: rgba(140,82,255,0.16);
   }
   *{ box-sizing:border-box; }
-  html,body{ margin:0; padding:0; background:transparent; }
-  body{ font-family:'Gowun Dodum', sans-serif; color:var(--ink); }
-  .app{ max-width:900px; margin:0 auto; background:var(--bg); min-height:100%; padding-bottom:60px; position:relative; }
+  html,body{ margin:0; padding:0; }
+  body{
+    min-height:100vh;
+    font-family:'Gowun Dodum', sans-serif; color:var(--ink);
+    display:flex; justify-content:center;
+    padding:36px 20px;
+    background:
+      radial-gradient(1100px 560px at 12% -8%, rgba(140,82,255,0.14), transparent 60%),
+      radial-gradient(900px 520px at 104% 6%, rgba(255,210,63,0.20), transparent 55%),
+      radial-gradient(700px 500px at 50% 120%, rgba(140,82,255,0.10), transparent 60%),
+      linear-gradient(180deg, #F7F2FF 0%, #FFFCF5 45%);
+  }
+  .app{
+    max-width:900px; width:100%; margin:0; background:var(--bg);
+    padding-bottom:60px; position:relative;
+    border-radius:32px; overflow:hidden;
+    box-shadow:0 24px 60px rgba(140,82,255,0.18), 0 1px 0 rgba(255,255,255,0.6) inset;
+  }
 
   /* ---------- Topbar ---------- */
   .topbar{
@@ -156,6 +171,10 @@
   .price-pill-lg{ background:var(--yellow-tint); color:var(--purple-deep); font-family:'Jua', sans-serif; font-size:16px; border-radius:999px; padding:7px 16px; }
   .detail-actions{ display:flex; gap:8px; flex:1; flex-wrap:wrap; }
 
+  @media (max-width:640px){
+    body{ padding:0; }
+    .app{ border-radius:0; box-shadow:none; max-width:100%; }
+  }
   @media (max-width:480px){
     .brand-text h1{ font-size:19px; }
     main{ padding:12px; }
@@ -615,12 +634,16 @@ function renderMyPageHtml(purchases, topups){
   return `
     <h3>마이페이지</h3>
     <div class="mypage-balance"><span>구마pay 잔액</span><span class="num">${formatWon(marketData.balance)}</span></div>
-    ${isAdmin ? `<button class="btn btn-yellow" id="chargeBtn" style="width:100%; margin-bottom:6px;">+ 구마pay 충전하기</button>` : ''}
+    ${isAdmin ? `
+      <div style="display:flex; gap:6px; margin-bottom:6px;">
+        <button class="btn btn-yellow" id="chargeBtn" style="flex:1;">+ 충전하기</button>
+        <button class="btn btn-outline" id="deductBtn" style="flex:1;">- 차감하기</button>
+      </div>` : ''}
     <p class="mypage-section-title">구매 이력</p>
     ${purchases.length === 0 ? `<p class="mypage-empty">아직 구매 기록이 없어요.</p>` : `
       <table class="ledger-table">
-        <thead><tr><th>날짜</th><th>품목</th><th>구매자</th><th>금액</th></tr></thead>
-        <tbody>${purchases.map(p => `<tr><td>${formatDate(p.purchasedAt)}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.buyerName)}</td><td class="num">${formatWon(p.price)}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>날짜</th><th>품목</th><th>구매자</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
+        <tbody>${purchases.map(p => `<tr><td>${formatDate(p.purchasedAt)}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.buyerName)}</td><td class="num">${formatWon(p.price)}</td>${isAdmin ? `<td><button class="row-del" data-purchase-del="${p.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
       </table>`}
     <p class="mypage-section-title">구마pay 충전 내역</p>
     ${topups.length === 0 ? `<p class="mypage-empty">아직 충전된 기록이 없어요.</p>` : `
@@ -635,9 +658,18 @@ function bindMyPageEvents(){
   el('mypageClose').addEventListener('click', closeModal);
   const chargeBtn = document.getElementById('chargeBtn');
   if(chargeBtn) chargeBtn.addEventListener('click', openChargeModal);
+  const deductBtn = document.getElementById('deductBtn');
+  if(deductBtn) deductBtn.addEventListener('click', openDeductModal);
   document.querySelectorAll('[data-topup-del]').forEach(b => {
     b.addEventListener('click', async () => {
       try{ await deleteDoc(doc(db, 'topups', b.dataset.topupDel)); }
+      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
+      await openMyPage();
+    });
+  });
+  document.querySelectorAll('[data-purchase-del]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{ await deleteDoc(doc(db, 'purchases', b.dataset.purchaseDel)); }
       catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
       await openMyPage();
     });
@@ -681,6 +713,42 @@ function openChargeModal(){
     }catch(e){ el('chargeError').textContent = '충전 중 문제가 생겼어요. 다시 시도해주세요.'; }
   });
   el('chargeCancel').addEventListener('click', async () => { await openMyPage(); });
+}
+
+/* ---------- Deduct (admin removes money, Firestore transaction) ---------- */
+async function performDeduct(amount){
+  await runTransaction(db, async (t) => {
+    const walletSnap = await t.get(walletRef);
+    const balance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
+    if(balance < amount) throw new Error('short');
+    t.set(walletRef, { balance: balance - amount }, { merge: true });
+  });
+}
+function openDeductModal(){
+  if(!isAdmin) return;
+  openModal(`
+    <h3>구마pay 차감하기</h3>
+    <p class="hint">충전 실수나 착오가 있을 때 잔액만 빠르게 정정하는 용도예요. 자세한 내역은 구매 이력을 참고해줘.</p>
+    <div class="field"><label for="deductAmountInput">차감 금액 (원)</label><input type="number" id="deductAmountInput" min="0" step="1"></div>
+    <p class="error-msg" id="deductError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="deductCancel">취소</button>
+      <button class="btn btn-primary" id="deductSubmit">차감하기</button>
+    </div>
+  `);
+  el('deductAmountInput').focus();
+  el('deductSubmit').addEventListener('click', async () => {
+    const amount = el('deductAmountInput').value;
+    if(amount === '' || Number(amount) <= 0){ el('deductError').textContent = '차감 금액을 올바르게 적어주세요.'; return; }
+    try{
+      await performDeduct(Number(amount));
+      await openMyPage();
+    }catch(e){
+      if(e.message === 'short') el('deductError').textContent = '지금 잔액보다 많이 뺄 수 없어요.';
+      else el('deductError').textContent = '차감 중 문제가 생겼어요. 다시 시도해주세요.';
+    }
+  });
+  el('deductCancel').addEventListener('click', async () => { await openMyPage(); });
 }
 
 /* ---------- Locked menus ---------- */
