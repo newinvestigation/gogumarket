@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고구마켓</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Noto+Sans+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple:#8C52FF; --purple-dark:#6A3FC2; --purple-deep:#4C2E99;
+    --purple-tint:#F3ECFF; --purple-tint2:#EEE3FF;
+    --yellow:#FFD23F; --yellow-dark:#F0AF00; --yellow-tint:#FFF6DC;
+    --bg:#FFFCF5; --card:#FFFFFF; --ink:#372B57; --ink-soft:#8E82AD;
+    --line:#ECE2FB; --danger:#FF6F6F; --shadow: rgba(140,82,255,0.16);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:transparent; }
+  body{ font-family:'Gowun Dodum', sans-serif; color:var(--ink); }
+  .app{ max-width:900px; margin:0 auto; background:var(--bg); min-height:100%; padding-bottom:60px; position:relative; }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+    padding:20px 18px 14px;
+    background:linear-gradient(180deg, var(--purple-tint) 0%, var(--bg) 100%);
+    border-bottom:2px dashed var(--purple-tint2);
+  }
+  .brand{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .logo-mascot{ width:42px; height:42px; flex-shrink:0; }
+  .brand-text h1{ font-family:'Jua', sans-serif; font-weight:400; font-size:23px; margin:0; color:var(--purple-deep); }
+  .tagline{ margin:2px 0 0; font-size:11px; color:var(--ink-soft); font-family:'Jua', sans-serif; }
+  .topbar-right{ display:flex; align-items:flex-start; gap:6px; flex-shrink:0; }
+  .icon-col{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%; background:var(--card);
+    border:2px solid var(--purple-tint2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 3px 0 var(--shadow);
+  }
+  .icon-btn:hover{ border-color:var(--purple); }
+  .icon-btn:focus-visible{ outline:2px solid var(--purple); outline-offset:2px; }
+  .icon-caption{ font-size:9px; color:var(--ink-soft); }
+  .gumapay-chip{
+    background:var(--card); border:2px solid var(--yellow); border-radius:999px;
+    padding:6px 12px 6px 8px; display:flex; align-items:center; gap:6px;
+    box-shadow:0 3px 0 var(--shadow);
+  }
+  .gumapay-chip svg{ width:22px; height:22px; flex-shrink:0; }
+  .gumapay-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .gumapay-label{ font-family:'Jua', sans-serif; font-size:10px; color:var(--purple-dark); }
+  .gumapay-balance{ font-family:'Jua', sans-serif; font-size:14px; color:var(--ink); }
+
+  /* ---------- Filter chips ---------- */
+  .filters{ display:flex; gap:8px; padding:14px 18px 0; flex-wrap:wrap; }
+  .chip-btn{
+    font-family:'Jua', sans-serif; font-size:13px; background:var(--card); color:var(--ink-soft);
+    border:2px solid var(--purple-tint2); border-radius:999px; padding:8px 14px; cursor:pointer;
+  }
+  .chip-btn.active{ background:var(--purple); color:#fff; border-color:var(--purple); }
+  .chip-btn:focus-visible{ outline:2px solid var(--purple-dark); outline-offset:2px; }
+
+  main{ padding:16px 18px; }
+  .section-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
+  .section-head h2{ font-family:'Jua', sans-serif; font-size:17px; margin:0; color:var(--purple-deep); }
+
+  .btn{ font-family:'Jua', sans-serif; border:none; cursor:pointer; border-radius:999px; padding:10px 16px; font-size:13px; transition:transform .1s ease; }
+  .btn:active{ transform:translateY(1px) scale(0.98); }
+  .btn:focus-visible{ outline:2px solid var(--purple-dark); outline-offset:2px; }
+  .btn-primary{ background:var(--purple); color:#fff; box-shadow:0 3px 0 var(--purple-dark); }
+  .btn-primary:hover{ background:var(--purple-dark); }
+  .btn-yellow{ background:var(--yellow); color:var(--purple-deep); box-shadow:0 3px 0 var(--yellow-dark); }
+  .btn-yellow:hover{ background:var(--yellow-dark); }
+  .btn-ghost{ background:none; color:var(--ink-soft); }
+  .btn-ghost:hover{ color:var(--ink); }
+  .btn-danger{ background:var(--danger); color:#fff; }
+  .btn-small{ padding:6px 11px; font-size:11px; }
+  .btn-outline{ background:#fff; color:var(--purple-dark); border:2px solid var(--purple-tint2); }
+  .btn:disabled{ background:#E2DCF0 !important; color:var(--ink-soft) !important; box-shadow:none !important; cursor:default; }
+
+  /* ---------- Feed (cafe-post rows, click for detail) ---------- */
+  .feed{ display:flex; flex-direction:column; gap:10px; }
+  .post-row{
+    display:flex; align-items:center; gap:14px; background:var(--card); border:2px solid var(--purple-tint2);
+    border-radius:18px; padding:12px 14px; box-shadow:0 3px 0 var(--shadow); cursor:pointer;
+  }
+  .post-row:hover{ border-color:var(--purple); }
+  .post-row:focus-visible{ outline:2px solid var(--purple-dark); outline-offset:2px; }
+  .post-thumb{ width:64px; height:64px; border-radius:14px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .post-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .thumb-sell{ background:var(--purple-tint); }
+  .thumb-buy{ background:var(--yellow-tint); }
+  .post-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .post-title{ font-family:'Jua', sans-serif; font-size:14.5px; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .price-pill{ align-self:flex-start; background:var(--yellow-tint); color:var(--purple-deep); font-family:'Jua', sans-serif; font-size:12.5px; border-radius:999px; padding:4px 10px; white-space:nowrap; }
+
+  .empty{ text-align:center; padding:40px 12px; color:var(--ink-soft); font-size:13px; border:2px dashed var(--purple-tint2); border-radius:20px; }
+  .loading-msg{ padding:40px 12px; text-align:center; color:var(--ink-soft); font-size:13px; }
+
+  /* ---------- Ledger tables (mypage) ---------- */
+  .ledger-table{ width:100%; border-collapse:separate; border-spacing:0 6px; font-size:12px; }
+  .ledger-table th{ text-align:left; font-family:'Jua', sans-serif; font-weight:400; color:var(--purple-dark); font-size:10.5px; padding:0 10px 4px; }
+  .ledger-table td{ background:var(--purple-tint); padding:8px 10px; border-top:1px solid var(--purple-tint2); border-bottom:1px solid var(--purple-tint2); }
+  .ledger-table td:first-child{ border-left:1px solid var(--purple-tint2); border-radius:10px 0 0 10px; }
+  .ledger-table td:last-child{ border-right:1px solid var(--purple-tint2); border-radius:0 10px 10px 0; }
+  .ledger-table td.num{ font-family:'Noto Sans Mono', monospace; text-align:right; }
+  .row-del{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px; }
+
+  /* ---------- Fixed admin corner ---------- */
+  .admin-corner{ position:fixed; right:16px; bottom:16px; z-index:40; }
+  .admin-corner-btn{
+    font-family:'Jua', sans-serif; font-size:11px; background:var(--card); color:var(--ink-soft);
+    border:1.5px solid var(--purple-tint2); border-radius:999px; padding:7px 12px; cursor:pointer;
+    box-shadow:0 2px 0 var(--shadow); opacity:0.85;
+  }
+  .admin-corner-btn:hover{ opacity:1; border-color:var(--purple); }
+  .admin-corner-btn.on{ background:var(--purple); color:#fff; border-color:var(--purple); opacity:1; }
+
+  /* ---------- Modal ---------- */
+  .overlay{ position:fixed; inset:0; background:rgba(76,46,153,0.35); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .overlay[hidden]{ display:none; }
+  .modal{ background:var(--bg); border-radius:24px; border:2px solid var(--purple-tint2); width:100%; max-width:440px; max-height:88vh; overflow-y:auto; padding:22px 20px 20px; box-shadow:0 8px 0 var(--shadow); }
+  .modal h3{ font-family:'Jua', sans-serif; font-size:18px; margin:0 0 4px; color:var(--purple-deep); }
+  .modal p.hint{ margin:0 0 14px; font-size:12px; color:var(--ink-soft); line-height:1.5; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
+  .field input, .field textarea{ width:100%; font-family:'Gowun Dodum', sans-serif; background:#fff; border:2px solid var(--purple-tint2); border-radius:12px; padding:9px 12px; font-size:14px; }
+  .field textarea{ resize:vertical; min-height:56px; }
+  .field input:focus-visible, .field textarea:focus-visible{ outline:2px solid var(--purple); outline-offset:1px; }
+  .error-msg{ color:var(--danger); font-size:12px; margin:-4px 0 10px; min-height:14px; }
+  .modal-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+  .mypage-balance{ background:var(--purple); color:#fff; border-radius:16px; padding:14px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+  .mypage-balance .num{ font-family:'Jua', sans-serif; font-size:20px; }
+  .mypage-section-title{ font-family:'Jua', sans-serif; font-size:13px; color:var(--purple-dark); margin:16px 0 8px; }
+  .mypage-empty{ font-size:12px; color:var(--ink-soft); padding:10px 4px; }
+  .type-toggle{ display:flex; gap:8px; margin-bottom:14px; }
+  .type-toggle button{ flex:1; font-family:'Jua', sans-serif; font-size:13.5px; border-radius:14px; padding:11px 6px; cursor:pointer; border:2px solid var(--purple-tint2); background:#fff; color:var(--ink-soft); }
+  .type-toggle button.selected.sell{ background:var(--purple); color:#fff; border-color:var(--purple); }
+  .type-toggle button.selected.buy{ background:var(--yellow); color:var(--purple-deep); border-color:var(--yellow); }
+  .img-preview{ width:100%; max-width:180px; border-radius:14px; margin-top:8px; display:none; object-fit:cover; }
+
+  /* ---------- Detail modal ---------- */
+  .detail-image{ width:100%; height:170px; border-radius:16px; overflow:hidden; background:var(--purple-tint); display:flex; align-items:center; justify-content:center; font-size:46px; margin-bottom:12px; }
+  .detail-image img{ width:100%; height:100%; object-fit:cover; }
+  .chip-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .tag-chip{ font-family:'Jua', sans-serif; font-size:10.5px; border-radius:999px; padding:3px 9px; }
+  .tag-sell{ background:var(--purple); color:#fff; }
+  .tag-buy{ background:var(--yellow); color:var(--purple-deep); }
+  .tag-sold{ background:var(--ink-soft); color:#fff; }
+  .tag-done{ background:var(--ink-soft); color:#fff; }
+  .detail-meta{ font-size:11.5px; color:var(--ink-soft); margin:2px 0 10px; }
+  .detail-row{ font-size:13px; margin:0 0 10px; }
+  .detail-row strong{ font-family:'Jua', sans-serif; font-size:11.5px; color:var(--purple-dark); display:block; margin-bottom:2px; }
+  .detail-desc{ font-size:13.5px; line-height:1.6; margin:0 0 14px; white-space:pre-wrap; word-break:break-word; }
+  .detail-price-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .price-pill-lg{ background:var(--yellow-tint); color:var(--purple-deep); font-family:'Jua', sans-serif; font-size:16px; border-radius:999px; padding:7px 16px; }
+  .detail-actions{ display:flex; gap:8px; flex:1; flex-wrap:wrap; }
+
+  @media (max-width:480px){
+    .brand-text h1{ font-size:19px; }
+    main{ padding:12px; }
+    .topbar-right{ gap:4px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo-mascot" viewBox="0 0 100 100" aria-hidden="true">
+        <ellipse cx="52" cy="20" rx="10" ry="6" fill="#8ED37B" transform="rotate(-20 52 20)"/>
+        <ellipse cx="60" cy="16" rx="7" ry="4" fill="#7BC46A" transform="rotate(15 60 16)"/>
+        <path d="M18,58 C12,32 32,12 54,16 C80,21 90,46 80,68 C72,86 42,92 25,80 C13,72 13,66 18,58 Z" fill="url(#gLogo)"/>
+        <defs><linearGradient id="gLogo" x1="10" y1="10" x2="90" y2="90"><stop offset="0" stop-color="#B98CFF"/><stop offset="1" stop-color="#8C52FF"/></linearGradient></defs>
+        <ellipse cx="38" cy="62" rx="7" ry="4.5" fill="#FFB6C9" opacity="0.6"/>
+        <ellipse cx="66" cy="58" rx="7" ry="4.5" fill="#FFB6C9" opacity="0.6"/>
+        <circle cx="43" cy="52" r="3.4" fill="#372B57"/>
+        <circle cx="64" cy="49" r="3.4" fill="#372B57"/>
+        <path d="M48,63 Q54,68 60,61" stroke="#372B57" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-text">
+        <h1>고구마켓</h1>
+        <p class="tagline">고민하지 말고 구매하자! 고구마켓</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="icon-col">
+        <button class="icon-btn" id="darkJobBtn" aria-label="어둠 알바">🌑</button>
+        <span class="icon-caption">어둠 알바</span>
+      </div>
+      <div class="icon-col">
+        <button class="icon-btn" id="darkNearBtn" aria-label="가까운 어둠">🌘</button>
+        <span class="icon-caption">가까운 어둠</span>
+      </div>
+      <div class="icon-col">
+        <button class="icon-btn" id="mypageBtn" aria-label="마이페이지">🧾</button>
+        <span class="icon-caption">마이페이지</span>
+      </div>
+      <div class="gumapay-chip">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="18" fill="#FFD23F" stroke="#8C52FF" stroke-width="2.2"/>
+          <path d="M13,18 Q15,14 17,18" stroke="#4C2E99" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <path d="M23,18 Q25,14 27,18" stroke="#4C2E99" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <path d="M14,25 Q20,31 26,25" stroke="#4C2E99" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="gumapay-text">
+          <span class="gumapay-label">구마pay</span>
+          <span class="gumapay-balance" id="balanceText">0원</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="filters">
+    <button class="chip-btn active" data-filter="all">전체</button>
+    <button class="chip-btn" data-filter="sell">팔아요</button>
+    <button class="chip-btn" data-filter="buy">살게요</button>
+  </nav>
+
+  <main>
+    <div class="section-head">
+      <h2>동네 게시판</h2>
+      <button class="btn btn-primary" id="newPostBtn" hidden>+ 글쓰기</button>
+    </div>
+    <div class="feed" id="feed">
+      <div class="loading-msg">고구마 캐는 중…</div>
+    </div>
+  </main>
+
+  <div class="admin-corner" id="adminCorner">
+    <button class="admin-corner-btn" id="adminToggleBtn">관리자</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<script type="module">
+/* =========================================================
+   고구마켓 설정
+   1) https://console.firebase.google.com 에서 새 프로젝트 만들기
+   2) 왼쪽 메뉴 Build > Firestore Database > 데이터베이스 만들기
+      (위치는 asia-northeast3 등 가까운 곳으로, 보안 규칙은 테스트 모드로 시작해도 OK)
+   3) 프로젝트 설정(톱니바퀴) > 일반 > 내 앱 > 웹 앱 추가(</> 아이콘)
+      에서 나오는 firebaseConfig 값을 아래에 그대로 붙여넣기
+   4) Firestore 규칙 탭에서 아래 규칙으로 바꾸고 게시(Publish) — 로그인 없이도
+      다같이 읽고 쓸 수 있게 하는 규칙이야 (밴드 전용 링크로만 공유해서 사용해줘):
+
+      rules_version = '2';
+      service cloud.firestore {
+        match /databases/{database}/documents {
+          match /{document=**} {
+            allow read, write: if true;
+          }
+        }
+      }
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyADlix7kNMQdrHCBA6Licd5tQyr1BjbRBE",
+  authDomain: "gogumarket-cda44.firebaseapp.com",
+  projectId: "gogumarket-cda44",
+  storageBucket: "gogumarket-cda44.firebasestorage.app",
+  messagingSenderId: "144928327825",
+  appId: "1:144928327825:web:6f4a456110d2de656d1730"
+};
+const ADMIN_PASSWORD = "goguma1234"; // 이 커뮤니티만 아는 암호로 바꿔서 쓰세요.
+const MAX_IMG_DIM = 480;
+const IMG_QUALITY = 0.72;
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+  getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+let marketData = { balance: 0, posts: [] };
+let isAdmin = false;
+let currentFilter = 'all';
+let db = null, postsCol = null, walletRef = null, purchasesCol = null, topupsCol = null;
+
+const el = (id) => document.getElementById(id);
+const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('YOUR_');
+
+function formatWon(n){ return Number(n).toLocaleString('ko-KR') + '원'; }
+function formatDate(iso){ return new Date(iso).toLocaleString('ko-KR', { month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+function showToastError(msg){ alert(msg || '저장 중 문제가 있었어요. 인터넷 연결을 확인하고 다시 시도해주세요.'); }
+
+function imageFileToDataUrl(file){
+  return new Promise((resolve) => {
+    if(!file){ resolve(''); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > h && w > MAX_IMG_DIM){ h = Math.round(h * MAX_IMG_DIM / w); w = MAX_IMG_DIM; }
+        else if(h >= w && h > MAX_IMG_DIM){ w = Math.round(w * MAX_IMG_DIM / h); h = MAX_IMG_DIM; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+      };
+      img.onerror = () => resolve('');
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- Render (chrome) ---------- */
+function render(){
+  el('newPostBtn').hidden = !isAdmin;
+  el('adminToggleBtn').textContent = isAdmin ? '로그아웃' : '관리자';
+  el('adminToggleBtn').classList.toggle('on', isAdmin);
+  renderFeed();
+}
+
+function renderFeed(){
+  const feed = el('feed');
+  if(!isConfigured){
+    feed.innerHTML = `<div class="empty">⚙️ 아직 Firebase 설정이 안 됐어요.<br>코드 위쪽 &lt;script&gt; 안의 firebaseConfig 값을 채워주세요.</div>`;
+    return;
+  }
+  let posts = [...marketData.posts];
+  if(currentFilter !== 'all') posts = posts.filter(p => p.type === currentFilter);
+  posts.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if(posts.length === 0){
+    feed.innerHTML = `<div class="empty">🍠 아직 게시글이 없어요.${isAdmin ? ' 위 버튼으로 글을 올려보세요.' : ''}</div>`;
+    return;
+  }
+
+  feed.innerHTML = posts.map(p => {
+    const isSell = p.type === 'sell';
+    return `
+    <div class="post-row" data-detail="${p.id}" role="button" tabindex="0">
+      <div class="post-thumb ${!p.image ? (isSell ? 'thumb-sell' : 'thumb-buy') : ''}">${p.image ? `<img src="${p.image}" alt="">` : '🍠'}</div>
+      <div class="post-main">
+        <span class="tag-chip ${isSell ? 'tag-sell' : 'tag-buy'}" style="align-self:flex-start;">${isSell ? '팔아요' : '살게요'}</span>
+        <p class="post-title">${escapeHtml(p.title)}</p>
+        <span class="price-pill">${formatWon(p.price)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  feed.querySelectorAll('[data-detail]').forEach(row => {
+    row.addEventListener('click', () => openDetailModal(row.dataset.detail));
+    row.addEventListener('keydown', (e) => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openDetailModal(row.dataset.detail); } });
+  });
+}
+
+/* ---------- Filters ---------- */
+document.querySelectorAll('.chip-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderFeed();
+  });
+});
+
+/* ---------- Modal helpers ---------- */
+function openModal(html){ el('modalBody').innerHTML = html; el('overlay').hidden = false; }
+function closeModal(){ el('overlay').hidden = true; el('modalBody').innerHTML = ''; }
+el('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
+document.addEventListener('keydown', (e) => { if(e.key==='Escape') closeModal(); });
+
+/* ---------- Admin login/logout ---------- */
+el('adminToggleBtn').addEventListener('click', () => {
+  if(isAdmin){ isAdmin = false; render(); return; }
+  openModal(`
+    <h3>관리자 인증</h3>
+    <p class="hint">글을 쓰거나 구마pay를 관리하려면 암호가 필요해요.</p>
+    <div class="field"><label for="pwInput">암호</label><input type="password" id="pwInput" autocomplete="off"></div>
+    <p class="error-msg" id="pwError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="pwCancel">취소</button>
+      <button class="btn btn-primary" id="pwSubmit">확인</button>
+    </div>
+  `);
+  const input = el('pwInput'); input.focus();
+  const submit = () => {
+    if(input.value === ADMIN_PASSWORD){ isAdmin = true; closeModal(); render(); }
+    else{ el('pwError').textContent = '암호가 맞지 않아요. 다시 확인해주세요.'; }
+  };
+  el('pwSubmit').addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if(e.key==='Enter') submit(); });
+  el('pwCancel').addEventListener('click', closeModal);
+});
+
+/* ---------- New post (팔아요/살게요) ---------- */
+el('newPostBtn').addEventListener('click', () => openPostModal());
+function openPostModal(){
+  if(!isAdmin) return;
+  let selectedType = 'sell';
+  openModal(`
+    <h3>글쓰기</h3>
+    <p class="hint">말머리를 고르고 내용을 채워주세요.</p>
+    <div class="type-toggle">
+      <button type="button" class="selected sell" id="typeSellBtn">팔아요</button>
+      <button type="button" class="buy" id="typeBuyBtn">살게요</button>
+    </div>
+    <div class="field"><label for="titleInput">제목</label><input type="text" id="titleInput" maxlength="60"></div>
+    <div class="field"><label for="priceInput">가격 (원)</label><input type="number" id="priceInput" min="0" step="1"></div>
+    <div class="field"><label for="locationInput">거래 희망 장소 (선택)</label><input type="text" id="locationInput" maxlength="40" placeholder="예: 게시판 앞, 여관 로비"></div>
+    <div class="field"><label for="descInput">설명 (선택)</label><textarea id="descInput" maxlength="300"></textarea></div>
+    <div class="field">
+      <label for="imageInput">사진 (선택)</label>
+      <input type="file" id="imageInput" accept="image/*">
+      <img class="img-preview" id="imgPreview" alt="미리보기">
+    </div>
+    <p class="error-msg" id="postError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="postCancel">취소</button>
+      <button class="btn btn-primary" id="postSubmit">등록하기</button>
+    </div>
+  `);
+  el('titleInput').focus();
+  el('typeSellBtn').addEventListener('click', () => {
+    selectedType = 'sell';
+    el('typeSellBtn').classList.add('selected'); el('typeBuyBtn').classList.remove('selected');
+  });
+  el('typeBuyBtn').addEventListener('click', () => {
+    selectedType = 'buy';
+    el('typeBuyBtn').classList.add('selected'); el('typeSellBtn').classList.remove('selected');
+  });
+  el('imageInput').addEventListener('change', async () => {
+    const file = el('imageInput').files[0];
+    if(!file) return;
+    const dataUrl = await imageFileToDataUrl(file);
+    if(dataUrl){ el('imgPreview').src = dataUrl; el('imgPreview').style.display = 'block'; }
+  });
+  el('postSubmit').addEventListener('click', async () => {
+    const title = el('titleInput').value.trim();
+    const price = el('priceInput').value;
+    const location = el('locationInput').value.trim();
+    const desc = el('descInput').value.trim();
+    if(!title){ el('postError').textContent = '제목을 적어주세요.'; return; }
+    if(price === '' || Number(price) < 0){ el('postError').textContent = '가격을 올바르게 적어주세요.'; return; }
+    const file = el('imageInput').files[0];
+    const image = file ? (el('imgPreview').src.startsWith('data:') ? el('imgPreview').src : await imageFileToDataUrl(file)) : '';
+    try{
+      await addDoc(postsCol, {
+        type: selectedType, title, price: Number(price), location, desc, image,
+        status: selectedType === 'sell' ? 'available' : 'open',
+        createdAt: new Date().toISOString()
+      });
+      closeModal();
+    }catch(e){ el('postError').textContent = '등록 중 문제가 생겼어요. 다시 시도해주세요.'; }
+  });
+  el('postCancel').addEventListener('click', closeModal);
+}
+
+/* ---------- Detail modal ---------- */
+function buildDetailActions(item){
+  const isSell = item.type === 'sell';
+  const closed = isSell ? item.status === 'sold' : item.status === 'fulfilled';
+  const short = isSell && !closed && marketData.balance < item.price;
+  let html = '';
+  if(isSell){
+    let label = '구매하기';
+    if(closed) label = '품절이에요';
+    else if(short) label = '돈이 부족해요';
+    html += `<button class="btn btn-primary" id="detailBuyBtn" ${closed || short ? 'disabled' : ''}>${label}</button>`;
+  }else if(isAdmin){
+    html += `<button class="btn btn-outline" id="detailToggleBtn">${closed ? '다시 열기' : '완료 처리'}</button>`;
+  }
+  if(isAdmin){
+    html += `<button class="btn btn-ghost btn-small" id="detailDeleteBtn">삭제</button>`;
+  }
+  return html;
+}
+function renderDetailHtml(item){
+  const isSell = item.type === 'sell';
+  const closed = isSell ? item.status === 'sold' : item.status === 'fulfilled';
+  const statusChip = isSell
+    ? (closed ? `<span class="tag-chip tag-sold">다 팔렸어요</span>` : '')
+    : (closed ? `<span class="tag-chip tag-done">구했어요</span>` : '');
+  return `
+    <div class="detail-image">${item.image ? `<img src="${item.image}" alt="">` : '🍠'}</div>
+    <div class="chip-row">
+      <span class="tag-chip ${isSell ? 'tag-sell' : 'tag-buy'}">${isSell ? '팔아요' : '살게요'}</span>
+      ${statusChip}
+    </div>
+    <h3>${escapeHtml(item.title)}</h3>
+    <p class="detail-meta">작성 ${formatDate(item.createdAt)}${isSell && closed && item.buyerName ? ' · ' + escapeHtml(item.buyerName) + '님 구매' : ''}</p>
+    <p class="detail-desc">${item.desc ? escapeHtml(item.desc) : '설명이 없어요.'}</p>
+    ${item.location ? `<p class="detail-row"><strong>거래 희망 장소</strong>${escapeHtml(item.location)}</p>` : ''}
+    <div class="detail-price-row">
+      <span class="price-pill-lg">${formatWon(item.price)}</span>
+      <div class="detail-actions">${buildDetailActions(item)}</div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-ghost" id="detailClose">닫기</button></div>
+  `;
+}
+function openDetailModal(postId){
+  const item = marketData.posts.find(p => p.id === postId);
+  if(!item) return;
+  openModal(renderDetailHtml(item));
+  bindDetailEvents(item);
+}
+function bindDetailEvents(item){
+  el('detailClose').addEventListener('click', closeModal);
+  const buyBtn = document.getElementById('detailBuyBtn');
+  if(buyBtn) buyBtn.addEventListener('click', () => openBuyModal(item.id));
+  const toggleBtn = document.getElementById('detailToggleBtn');
+  if(toggleBtn) toggleBtn.addEventListener('click', async () => {
+    const newStatus = item.status === 'fulfilled' ? 'open' : 'fulfilled';
+    try{
+      await updateDoc(doc(db, 'posts', item.id), { status: newStatus });
+      item.status = newStatus;
+      openDetailModal(item.id);
+    }catch(e){ alert('상태 변경 중 문제가 생겼어요. 다시 시도해주세요.'); }
+  });
+  const delBtn = document.getElementById('detailDeleteBtn');
+  if(delBtn) delBtn.addEventListener('click', () => openDeleteModal(item.id));
+}
+
+/* ---------- Buy (sell-type posts, Firestore transaction) ---------- */
+async function performPurchase(postId, buyerName){
+  const postRef = doc(db, 'posts', postId);
+  await runTransaction(db, async (t) => {
+    const postSnap = await t.get(postRef);
+    const walletSnap = await t.get(walletRef);
+    if(!postSnap.exists()) throw new Error('missing');
+    const post = postSnap.data();
+    if(post.status === 'sold') throw new Error('sold');
+    const balance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
+    if(balance < post.price) throw new Error('short');
+    t.update(postRef, { status: 'sold', buyerName });
+    t.set(walletRef, { balance: balance - post.price }, { merge: true });
+    const purchaseRef = doc(purchasesCol);
+    t.set(purchaseRef, { postId, title: post.title, price: post.price, buyerName, purchasedAt: new Date().toISOString() });
+  });
+}
+function openBuyModal(postId){
+  const item = marketData.posts.find(p => p.id === postId);
+  if(!item || item.status === 'sold') return;
+  if(marketData.balance < item.price){
+    openModal(`
+      <h3>구마pay가 부족해요</h3>
+      <p class="hint">"${escapeHtml(item.title)}"는 ${formatWon(item.price)}인데, 지금 잔액은 ${formatWon(marketData.balance)}예요.</p>
+      <div class="modal-actions"><button class="btn btn-primary" id="okClose">확인</button></div>
+    `);
+    el('okClose').addEventListener('click', closeModal);
+    return;
+  }
+  openModal(`
+    <h3>구매하기</h3>
+    <p class="hint">${escapeHtml(item.title)} · ${formatWon(item.price)}<br>구마pay에서 금액이 빠지고, 이름과 함께 기록이 남아요.</p>
+    <div class="field"><label for="buyerInput">구매자 이름</label><input type="text" id="buyerInput" maxlength="30" placeholder="닉네임 또는 이름"></div>
+    <p class="error-msg" id="buyError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="buyCancel">취소</button>
+      <button class="btn btn-primary" id="buySubmit">구매 확정</button>
+    </div>
+  `);
+  el('buyerInput').focus();
+  el('buySubmit').addEventListener('click', async () => {
+    const buyerName = el('buyerInput').value.trim();
+    if(!buyerName){ el('buyError').textContent = '이름을 적어야 구매를 확정할 수 있어요.'; return; }
+    try{
+      await performPurchase(item.id, buyerName);
+      closeModal();
+    }catch(e){
+      if(e.message === 'sold') el('buyError').textContent = '앗, 방금 다른 사람이 먼저 구매했어요.';
+      else if(e.message === 'short') el('buyError').textContent = '그 사이 구마pay가 부족해졌어요.';
+      else el('buyError').textContent = '구매 중 문제가 생겼어요. 다시 시도해주세요.';
+    }
+  });
+  el('buyCancel').addEventListener('click', closeModal);
+}
+
+/* ---------- Delete post ---------- */
+function openDeleteModal(postId){
+  const item = marketData.posts.find(p => p.id === postId);
+  if(!item) return;
+  openModal(`
+    <h3>게시글 삭제</h3>
+    <p class="hint">"${escapeHtml(item.title)}" 글을 삭제할까요?</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="delCancel">취소</button>
+      <button class="btn btn-danger" id="delSubmit">삭제하기</button>
+    </div>
+  `);
+  el('delSubmit').addEventListener('click', async () => {
+    try{
+      await deleteDoc(doc(db, 'posts', postId));
+      closeModal();
+    }catch(e){ alert('삭제 중 문제가 생겼어요. 다시 시도해주세요.'); }
+  });
+  el('delCancel').addEventListener('click', closeModal);
+}
+
+/* ---------- My page ---------- */
+async function fetchPurchases(){
+  const snap = await getDocs(query(purchasesCol, orderBy('purchasedAt', 'desc'), limit(100)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function fetchTopups(){
+  const snap = await getDocs(query(topupsCol, orderBy('addedAt', 'desc'), limit(100)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+el('mypageBtn').addEventListener('click', openMyPage);
+async function openMyPage(){
+  openModal(`<h3>마이페이지</h3><p class="hint">불러오는 중…</p>`);
+  const [purchases, topups] = await Promise.all([fetchPurchases(), fetchTopups()]);
+  openModal(renderMyPageHtml(purchases, topups));
+  bindMyPageEvents();
+}
+function renderMyPageHtml(purchases, topups){
+  return `
+    <h3>마이페이지</h3>
+    <div class="mypage-balance"><span>구마pay 잔액</span><span class="num">${formatWon(marketData.balance)}</span></div>
+    ${isAdmin ? `<button class="btn btn-yellow" id="chargeBtn" style="width:100%; margin-bottom:6px;">+ 구마pay 충전하기</button>` : ''}
+    <p class="mypage-section-title">구매 이력</p>
+    ${purchases.length === 0 ? `<p class="mypage-empty">아직 구매 기록이 없어요.</p>` : `
+      <table class="ledger-table">
+        <thead><tr><th>날짜</th><th>품목</th><th>구매자</th><th>금액</th></tr></thead>
+        <tbody>${purchases.map(p => `<tr><td>${formatDate(p.purchasedAt)}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.buyerName)}</td><td class="num">${formatWon(p.price)}</td></tr>`).join('')}</tbody>
+      </table>`}
+    <p class="mypage-section-title">구마pay 충전 내역</p>
+    ${topups.length === 0 ? `<p class="mypage-empty">아직 충전된 기록이 없어요.</p>` : `
+      <table class="ledger-table">
+        <thead><tr><th>날짜</th><th>판매자</th><th>물건</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
+        <tbody>${topups.map(t => `<tr><td>${formatDate(t.addedAt)}</td><td>${escapeHtml(t.sellerName)}</td><td>${escapeHtml(t.itemName)}</td><td class="num">${formatWon(t.amount)}</td>${isAdmin ? `<td><button class="row-del" data-topup-del="${t.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
+      </table>`}
+    <div class="modal-actions"><button class="btn btn-ghost" id="mypageClose">닫기</button></div>
+  `;
+}
+function bindMyPageEvents(){
+  el('mypageClose').addEventListener('click', closeModal);
+  const chargeBtn = document.getElementById('chargeBtn');
+  if(chargeBtn) chargeBtn.addEventListener('click', openChargeModal);
+  document.querySelectorAll('[data-topup-del]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{ await deleteDoc(doc(db, 'topups', b.dataset.topupDel)); }
+      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
+      await openMyPage();
+    });
+  });
+}
+
+/* ---------- Charge (admin adds money, Firestore transaction) ---------- */
+async function performCharge(sellerName, itemName, amount){
+  await runTransaction(db, async (t) => {
+    const walletSnap = await t.get(walletRef);
+    const balance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
+    t.set(walletRef, { balance: balance + amount }, { merge: true });
+    const topupRef = doc(topupsCol);
+    t.set(topupRef, { sellerName, itemName, amount, addedAt: new Date().toISOString() });
+  });
+}
+function openChargeModal(){
+  if(!isAdmin) return;
+  openModal(`
+    <h3>구마pay 충전하기</h3>
+    <p class="hint">플레이어가 '살게요' 물건을 판다고 알려오면, 여기서 구마pay에 금액을 더해주세요.</p>
+    <div class="field"><label for="sellerInput">판매한 사람</label><input type="text" id="sellerInput" maxlength="30"></div>
+    <div class="field"><label for="itemInput">판 물건</label><input type="text" id="itemInput" maxlength="60"></div>
+    <div class="field"><label for="amountInput">충전 금액 (원)</label><input type="number" id="amountInput" min="0" step="1"></div>
+    <p class="error-msg" id="chargeError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="chargeCancel">취소</button>
+      <button class="btn btn-primary" id="chargeSubmit">충전하기</button>
+    </div>
+  `);
+  el('sellerInput').focus();
+  el('chargeSubmit').addEventListener('click', async () => {
+    const sellerName = el('sellerInput').value.trim();
+    const itemName = el('itemInput').value.trim();
+    const amount = el('amountInput').value;
+    if(!sellerName || !itemName){ el('chargeError').textContent = '판매한 사람과 물건을 모두 적어주세요.'; return; }
+    if(amount === '' || Number(amount) <= 0){ el('chargeError').textContent = '충전 금액을 올바르게 적어주세요.'; return; }
+    try{
+      await performCharge(sellerName, itemName, Number(amount));
+      await openMyPage();
+    }catch(e){ el('chargeError').textContent = '충전 중 문제가 생겼어요. 다시 시도해주세요.'; }
+  });
+  el('chargeCancel').addEventListener('click', async () => { await openMyPage(); });
+}
+
+/* ---------- Locked menus ---------- */
+function openLockedModal(title){
+  openModal(`
+    <h3 style="text-align:center;">${title}</h3>
+    <p class="hint" style="text-align:center;">아직 열리지 않은 메뉴예요.</p>
+    <div class="modal-actions" style="justify-content:center;"><button class="btn btn-primary" id="lockedClose">알겠어요</button></div>
+  `);
+  el('lockedClose').addEventListener('click', closeModal);
+}
+el('darkJobBtn').addEventListener('click', () => openLockedModal('어둠 알바'));
+el('darkNearBtn').addEventListener('click', () => openLockedModal('가까운 어둠'));
+
+/* ---------- Boot (Firebase realtime listeners) ---------- */
+function boot(){
+  render();
+  if(!isConfigured) return;
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  postsCol = collection(db, 'posts');
+  walletRef = doc(db, 'meta', 'wallet');
+  purchasesCol = collection(db, 'purchases');
+  topupsCol = collection(db, 'topups');
+
+  onSnapshot(query(postsCol, orderBy('createdAt', 'desc')), (snap) => {
+    marketData.posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFeed();
+  }, (err) => {
+    console.error(err);
+    el('feed').innerHTML = `<div class="empty">⚠️ 데이터를 불러오지 못했어요. Firebase 설정과 보안 규칙을 확인해주세요.</div>`;
+  });
+
+  onSnapshot(walletRef, (snap) => {
+    marketData.balance = snap.exists() ? (snap.data().balance || 0) : 0;
+    el('balanceText').textContent = formatWon(marketData.balance);
+    renderFeed();
+  });
+}
+boot();
+</script>
+</body>
+</html>
