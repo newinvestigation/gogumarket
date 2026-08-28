@@ -6,7 +6,7 @@
 <title>고구마켓</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Noto+Sans+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poor+Story&family=Gowun+Dodum&family=Noto+Sans+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --purple:#8C52FF; --purple-dark:#6A3FC2; --purple-deep:#4C2E99;
@@ -44,8 +44,8 @@
   }
   .brand{ display:flex; align-items:center; gap:9px; min-width:0; }
   .logo-mascot{ width:42px; height:42px; flex-shrink:0; }
-  .brand-text h1{ font-family:'Jua', sans-serif; font-weight:400; font-size:23px; margin:0; color:var(--purple-deep); }
-  .tagline{ margin:2px 0 0; font-size:11px; color:var(--ink-soft); font-family:'Jua', sans-serif; }
+  .brand-text h1{ font-family:'Poor Story', cursive; font-weight:700; font-size:23px; margin:0; color:var(--purple-deep); }
+  .tagline{ margin:2px 0 0; font-size:11px; color:var(--ink-soft); font-family:'Poor Story', cursive; font-weight:700; }
   .topbar-right{ display:flex; align-items:flex-start; gap:6px; flex-shrink:0; }
   .icon-col{ display:flex; flex-direction:column; align-items:center; gap:2px; }
   .icon-btn{
@@ -59,17 +59,19 @@
   .gumapay-chip{
     background:var(--card); border:2px solid var(--yellow); border-radius:999px;
     padding:6px 12px 6px 8px; display:flex; align-items:center; gap:6px;
-    box-shadow:0 3px 0 var(--shadow);
+    box-shadow:0 3px 0 var(--shadow); cursor:pointer; font:inherit; -webkit-tap-highlight-color:transparent;
   }
+  .gumapay-chip:hover{ border-color:var(--purple); }
+  .gumapay-chip:focus-visible{ outline:2px solid var(--purple-dark); outline-offset:2px; }
   .gumapay-chip svg{ width:22px; height:22px; flex-shrink:0; }
   .gumapay-text{ display:flex; flex-direction:column; line-height:1.2; }
-  .gumapay-label{ font-family:'Jua', sans-serif; font-size:10px; color:var(--purple-dark); }
-  .gumapay-balance{ font-family:'Jua', sans-serif; font-size:14px; color:var(--ink); }
+  .gumapay-label{ font-family:'Poor Story', cursive; font-weight:700; font-size:10px; color:var(--purple-dark); }
+  .gumapay-balance{ font-family:'Poor Story', cursive; font-weight:700; font-size:14px; color:var(--ink); }
 
   /* ---------- Filter chips ---------- */
   .filters{ display:flex; gap:8px; padding:14px 18px 0; flex-wrap:wrap; }
   .chip-btn{
-    font-family:'Jua', sans-serif; font-size:13px; background:var(--card); color:var(--ink-soft);
+    font-family:'Poor Story', cursive; font-weight:700; font-size:13px; background:var(--card); color:var(--ink-soft);
     border:2px solid var(--purple-tint2); border-radius:999px; padding:8px 14px; cursor:pointer;
   }
   .chip-btn.active{ background:var(--purple); color:#fff; border-color:var(--purple); }
@@ -77,9 +79,9 @@
 
   main{ padding:16px 18px; }
   .section-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
-  .section-head h2{ font-family:'Jua', sans-serif; font-size:17px; margin:0; color:var(--purple-deep); }
+  .section-head h2{ font-family:'Poor Story', cursive; font-weight:700; font-size:17px; margin:0; color:var(--purple-deep); }
 
-  .btn{ font-family:'Jua', sans-serif; border:none; cursor:pointer; border-radius:999px; padding:10px 16px; font-size:13px; transition:transform .1s ease; }
+  .btn{ font-family:'Poor Story', cursive; font-weight:700; border:none; cursor:pointer; border-radius:999px; padding:10px 16px; font-size:13px; transition:transform .1s ease; }
   .btn:active{ transform:translateY(1px) scale(0.98); }
   .btn:focus-visible{ outline:2px solid var(--purple-dark); outline-offset:2px; }
   .btn-primary{ background:var(--purple); color:#fff; box-shadow:0 3px 0 var(--purple-dark); }
@@ -106,15 +108,15 @@
   .thumb-sell{ background:var(--purple-tint); }
   .thumb-buy{ background:var(--yellow-tint); }
   .post-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
-  .post-title{ font-family:'Jua', sans-serif; font-size:14.5px; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .price-pill{ align-self:flex-start; background:var(--yellow-tint); color:var(--purple-deep); font-family:'Jua', sans-serif; font-size:12.5px; border-radius:999px; padding:4px 10px; white-space:nowrap; }
+  .post-title{ font-family:'Poor Story', cursive; font-weight:700; font-size:14.5px; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .price-pill{ align-self:flex-start; background:var(--yellow-tint); color:var(--purple-deep); font-family:'Poor Story', cursive; font-weight:700; font-size:12.5px; border-radius:999px; padding:4px 10px; white-space:nowrap; }
 
   .empty{ text-align:center; padding:40px 12px; color:var(--ink-soft); font-size:13px; border:2px dashed var(--purple-tint2); border-radius:20px; }
   .loading-msg{ padding:40px 12px; text-align:center; color:var(--ink-soft); font-size:13px; }
 
   /* ---------- Ledger tables (mypage) ---------- */
   .ledger-table{ width:100%; border-collapse:separate; border-spacing:0 6px; font-size:12px; }
-  .ledger-table th{ text-align:left; font-family:'Jua', sans-serif; font-weight:400; color:var(--purple-dark); font-size:10.5px; padding:0 10px 4px; }
+  .ledger-table th{ text-align:left; font-family:'Poor Story', cursive; font-weight:700; color:var(--purple-dark); font-size:10.5px; padding:0 10px 4px; }
   .ledger-table td{ background:var(--purple-tint); padding:8px 10px; border-top:1px solid var(--purple-tint2); border-bottom:1px solid var(--purple-tint2); }
   .ledger-table td:first-child{ border-left:1px solid var(--purple-tint2); border-radius:10px 0 0 10px; }
   .ledger-table td:last-child{ border-right:1px solid var(--purple-tint2); border-radius:0 10px 10px 0; }
@@ -124,7 +126,7 @@
   /* ---------- Fixed admin corner ---------- */
   .admin-corner{ position:fixed; right:16px; bottom:16px; z-index:40; }
   .admin-corner-btn{
-    font-family:'Jua', sans-serif; font-size:11px; background:var(--card); color:var(--ink-soft);
+    font-family:'Poor Story', cursive; font-weight:700; font-size:11px; background:var(--card); color:var(--ink-soft);
     border:1.5px solid var(--purple-tint2); border-radius:999px; padding:7px 12px; cursor:pointer;
     box-shadow:0 2px 0 var(--shadow); opacity:0.85;
   }
@@ -135,7 +137,7 @@
   .overlay{ position:fixed; inset:0; background:rgba(76,46,153,0.35); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
   .overlay[hidden]{ display:none; }
   .modal{ background:var(--bg); border-radius:24px; border:2px solid var(--purple-tint2); width:100%; max-width:440px; max-height:88vh; overflow-y:auto; padding:22px 20px 20px; box-shadow:0 8px 0 var(--shadow); }
-  .modal h3{ font-family:'Jua', sans-serif; font-size:18px; margin:0 0 4px; color:var(--purple-deep); }
+  .modal h3{ font-family:'Poor Story', cursive; font-weight:700; font-size:18px; margin:0 0 4px; color:var(--purple-deep); }
   .modal p.hint{ margin:0 0 14px; font-size:12px; color:var(--ink-soft); line-height:1.5; }
   .field{ margin-bottom:12px; }
   .field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
@@ -145,11 +147,11 @@
   .error-msg{ color:var(--danger); font-size:12px; margin:-4px 0 10px; min-height:14px; }
   .modal-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
   .mypage-balance{ background:var(--purple); color:#fff; border-radius:16px; padding:14px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
-  .mypage-balance .num{ font-family:'Jua', sans-serif; font-size:20px; }
-  .mypage-section-title{ font-family:'Jua', sans-serif; font-size:13px; color:var(--purple-dark); margin:16px 0 8px; }
+  .mypage-balance .num{ font-family:'Poor Story', cursive; font-weight:700; font-size:20px; }
+  .mypage-section-title{ font-family:'Poor Story', cursive; font-weight:700; font-size:13px; color:var(--purple-dark); margin:16px 0 8px; }
   .mypage-empty{ font-size:12px; color:var(--ink-soft); padding:10px 4px; }
   .type-toggle{ display:flex; gap:8px; margin-bottom:14px; }
-  .type-toggle button{ flex:1; font-family:'Jua', sans-serif; font-size:13.5px; border-radius:14px; padding:11px 6px; cursor:pointer; border:2px solid var(--purple-tint2); background:#fff; color:var(--ink-soft); }
+  .type-toggle button{ flex:1; font-family:'Poor Story', cursive; font-weight:700; font-size:13.5px; border-radius:14px; padding:11px 6px; cursor:pointer; border:2px solid var(--purple-tint2); background:#fff; color:var(--ink-soft); }
   .type-toggle button.selected.sell{ background:var(--purple); color:#fff; border-color:var(--purple); }
   .type-toggle button.selected.buy{ background:var(--yellow); color:var(--purple-deep); border-color:var(--yellow); }
   .img-preview{ width:100%; max-width:180px; border-radius:14px; margin-top:8px; display:none; object-fit:cover; }
@@ -158,17 +160,17 @@
   .detail-image{ width:100%; height:170px; border-radius:16px; overflow:hidden; background:var(--purple-tint); display:flex; align-items:center; justify-content:center; font-size:46px; margin-bottom:12px; }
   .detail-image img{ width:100%; height:100%; object-fit:cover; }
   .chip-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
-  .tag-chip{ font-family:'Jua', sans-serif; font-size:10.5px; border-radius:999px; padding:3px 9px; }
+  .tag-chip{ font-family:'Poor Story', cursive; font-weight:700; font-size:10.5px; border-radius:999px; padding:3px 9px; }
   .tag-sell{ background:var(--purple); color:#fff; }
   .tag-buy{ background:var(--yellow); color:var(--purple-deep); }
   .tag-sold{ background:var(--ink-soft); color:#fff; }
   .tag-done{ background:var(--ink-soft); color:#fff; }
   .detail-meta{ font-size:11.5px; color:var(--ink-soft); margin:2px 0 10px; }
   .detail-row{ font-size:13px; margin:0 0 10px; }
-  .detail-row strong{ font-family:'Jua', sans-serif; font-size:11.5px; color:var(--purple-dark); display:block; margin-bottom:2px; }
+  .detail-row strong{ font-family:'Poor Story', cursive; font-weight:700; font-size:11.5px; color:var(--purple-dark); display:block; margin-bottom:2px; }
   .detail-desc{ font-size:13.5px; line-height:1.6; margin:0 0 14px; white-space:pre-wrap; word-break:break-word; }
   .detail-price-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
-  .price-pill-lg{ background:var(--yellow-tint); color:var(--purple-deep); font-family:'Jua', sans-serif; font-size:16px; border-radius:999px; padding:7px 16px; }
+  .price-pill-lg{ background:var(--yellow-tint); color:var(--purple-deep); font-family:'Poor Story', cursive; font-weight:700; font-size:16px; border-radius:999px; padding:7px 16px; }
   .detail-actions{ display:flex; gap:8px; flex:1; flex-wrap:wrap; }
 
   @media (max-width:640px){
@@ -200,7 +202,7 @@
       </svg>
       <div class="brand-text">
         <h1>고구마켓</h1>
-        <p class="tagline">고민하지 말고 구매하자! 고구마켓</p>
+        <p class="tagline">고민하지 말고 구매하자!</p>
       </div>
     </div>
     <div class="topbar-right">
@@ -216,7 +218,7 @@
         <button class="icon-btn" id="mypageBtn" aria-label="마이페이지">🧾</button>
         <span class="icon-caption">마이페이지</span>
       </div>
-      <div class="gumapay-chip">
+      <button class="gumapay-chip" id="gumapayChip" type="button" aria-label="마이페이지로 구마pay 잔액 보기">
         <svg viewBox="0 0 40 40" aria-hidden="true">
           <circle cx="20" cy="20" r="18" fill="#FFD23F" stroke="#8C52FF" stroke-width="2.2"/>
           <path d="M13,18 Q15,14 17,18" stroke="#4C2E99" stroke-width="2.2" fill="none" stroke-linecap="round"/>
@@ -227,7 +229,7 @@
           <span class="gumapay-label">구마pay</span>
           <span class="gumapay-balance" id="balanceText">0원</span>
         </div>
-      </div>
+      </button>
     </div>
   </header>
 
@@ -303,7 +305,10 @@ const el = (id) => document.getElementById(id);
 const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('YOUR_');
 
 function formatWon(n){ return Number(n).toLocaleString('ko-KR') + '원'; }
-function formatDate(iso){ return new Date(iso).toLocaleString('ko-KR', { month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+// 괴담 마켓 컨셉: 실제 날짜는 절대 보여주지 않고, 검열/오염된 기록처럼 표시해
+function formatDate(iso){
+  return '20▒▒년 ▒▒월 ▒▒일';
+}
 function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
 function showToastError(msg){ alert(msg || '저장 중 문제가 있었어요. 인터넷 연결을 확인하고 다시 시도해주세요.'); }
 
@@ -624,6 +629,7 @@ async function fetchTopups(){
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 el('mypageBtn').addEventListener('click', openMyPage);
+el('gumapayChip').addEventListener('click', openMyPage);
 async function openMyPage(){
   openModal(`<h3>마이페이지</h3><p class="hint">불러오는 중…</p>`);
   const [purchases, topups] = await Promise.all([fetchPurchases(), fetchTopups()]);
