@@ -766,16 +766,17 @@ async function fetchTopups(){
   const snap = await getDocs(query(topupsCol, orderBy('addedAt', 'desc'), limit(100)));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-function openBlockedModal(title){
+function openBlockedModal(){
   openModal(`
-    <h3 style="text-align:center;">${title}</h3>
-    <p class="glitch-label" style="text-align:center; margin:10px 0;"><span class="serious-italic">나에게는 필요하지 않아!</span></p>
-    <div class="modal-actions" style="justify-content:center;"><button class="btn btn-primary" id="blockedClose">닫기</button></div>
+    <div style="text-align:center; padding:24px 0 8px;">
+      <p class="glitch-label" style="margin:0; font-size:26px;"><span class="serious-italic">나에게는 필요하지 않아!</span></p>
+    </div>
+    <div class="modal-actions" style="justify-content:center;"><button class="btn btn-ghost" id="blockedClose">닫기</button></div>
   `);
   el('blockedClose').addEventListener('click', closeModal);
 }
-el('mypageBtn').addEventListener('click', () => { corruptedMode ? openBlockedModal('마이페이지') : openMyPage(); });
-el('gumapayChip').addEventListener('click', () => { corruptedMode ? openBlockedModal('구마pay') : openMyPage(); });
+el('mypageBtn').addEventListener('click', () => { corruptedMode ? openBlockedModal() : openMyPage(); });
+el('gumapayChip').addEventListener('click', () => { corruptedMode ? openBlockedModal() : openMyPage(); });
 async function openMyPage(){
   openModal(`<h3>마이페이지</h3><p class="hint">불러오는 중…</p>`);
   const [purchases, topups] = await Promise.all([fetchPurchases(), fetchTopups()]);
