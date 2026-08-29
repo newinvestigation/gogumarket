@@ -177,7 +177,7 @@
   .dark-item .dark-main{ flex:1; min-width:0; }
   .dark-item .dark-title{ font-family:'Poor Story', cursive; font-weight:700; font-size:14px; margin:0; }
   .dark-item .dark-sub{ font-size:12px; color:var(--ink-soft); margin:2px 0 0; }
-  .dark-item .dark-badge{ font-family:'Poor Story', cursive; font-weight:700; font-size:12.5px; background:var(--yellow-tint); color:var(--purple-deep); border-radius:999px; padding:4px 10px; white-space:nowrap; flex-shrink:0; }
+  .dark-item .dark-badge{ font-family:'Poor Story', cursive; font-weight:700; font-size:12.5px; background:var(--purple-dark); color:#FFD23F; border-radius:999px; padding:4px 10px; white-space:nowrap; flex-shrink:0; }
   .mode-flash{ position:fixed; inset:0; z-index:45; background:#000; opacity:0; pointer-events:none; transition:opacity .08s ease; }
   .serious-italic{ font-family:'Gowun Batang', serif; font-style:italic; font-weight:700; display:inline-block; transform:skewX(-9deg); letter-spacing:0.5px; }
   .loading-msg{ padding:40px 12px; text-align:center; color:var(--ink-soft); font-size:13px; }
@@ -940,6 +940,7 @@ function renderDarkJobsHtml(jobs){
           <p class="dark-sub">${escapeHtml(j.employerName)}</p>
         </div>
         <span class="dark-badge">시급 ${formatWon(j.wage)}</span>
+        ${isAdmin ? `<button class="btn btn-ghost btn-small" data-dj-del="${j.id}">삭제</button>` : ''}
       </div>
     `).join('')}
     <div class="modal-actions"><button class="btn btn-ghost" id="darkClose">닫기</button></div>
@@ -949,6 +950,13 @@ function bindDarkJobsEvents(){
   el('darkClose').addEventListener('click', closeModal);
   const newBtn = document.getElementById('djNewBtn');
   if(newBtn) newBtn.addEventListener('click', openDarkJobFormModal);
+  document.querySelectorAll('[data-dj-del]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{ await deleteDoc(doc(db, 'darkjobs', b.dataset.djDel)); }
+      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
+      await openDarkJobsModal();
+    });
+  });
 }
 function openDarkJobFormModal(){
   if(!isAdmin) return;
@@ -1001,6 +1009,7 @@ function renderDarkPlacesHtml(places){
           <p class="dark-title">${escapeHtml(p.name)}</p>
           <p class="dark-sub">현재 위치로부터 ${escapeHtml(p.distance)}</p>
         </div>
+        ${isAdmin ? `<button class="btn btn-ghost btn-small" data-dp-del="${p.id}">삭제</button>` : ''}
       </div>
     `).join('')}
     <div class="modal-actions"><button class="btn btn-ghost" id="darkClose">닫기</button></div>
@@ -1010,6 +1019,13 @@ function bindDarkPlacesEvents(){
   el('darkClose').addEventListener('click', closeModal);
   const newBtn = document.getElementById('dpNewBtn');
   if(newBtn) newBtn.addEventListener('click', openDarkPlaceFormModal);
+  document.querySelectorAll('[data-dp-del]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{ await deleteDoc(doc(db, 'darkplaces', b.dataset.dpDel)); }
+      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
+      await openDarkPlacesModal();
+    });
+  });
 }
 function openDarkPlaceFormModal(){
   if(!isAdmin) return;
