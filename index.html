@@ -33,6 +33,7 @@
   html.corrupted .app{ box-shadow:0 24px 70px rgba(0,0,0,0.65), 0 1px 0 rgba(122,31,214,0.15) inset; }
   html.corrupted .brand-text h1,
   html.corrupted .modal h3,
+  html.corrupted .detail-page-body h3,
   html.corrupted .post-title,
   html.corrupted .card-title,
   html.corrupted .section-head h2,
@@ -68,7 +69,7 @@
     100%{ background-position:0 3px; }
   }
   @media (prefers-reduced-motion: reduce){
-    html.corrupted .brand-text h1, html.corrupted .modal h3, html.corrupted .post-title,
+    html.corrupted .brand-text h1, html.corrupted .modal h3, html.corrupted .detail-page-body h3, html.corrupted .post-title,
     html.corrupted .card-title, html.corrupted .section-head h2, html.corrupted .glitch-label,
     html.corrupted .post-thumb img, html.corrupted .detail-image img, html.corrupted .img-preview,
     html.corrupted .app::after{ animation:none; }
@@ -243,7 +244,30 @@
   .type-toggle button.selected.buy{ background:var(--gold); color:#4A3300; border-color:var(--gold); }
   .img-preview{ width:100%; max-width:180px; border-radius:12px; margin-top:8px; display:none; object-fit:cover; }
 
-  /* ---------- Detail modal ---------- */
+  /* ---------- Detail page (full-screen slide-over, like Karrot's post screen) ---------- */
+  .detail-page-wrap{ position:fixed; top:0; bottom:0; left:50%; margin-left:-210px; width:420px; max-width:100%; z-index:44; pointer-events:none; }
+  .detail-page{
+    position:absolute; inset:0; background:var(--bg); display:flex; flex-direction:column;
+    transform:translateX(100%); transition:transform .32s cubic-bezier(.22,.61,.36,1);
+    box-shadow:-8px 0 28px rgba(0,0,0,0.14); pointer-events:none;
+  }
+  .detail-page.open{ transform:translateX(0); pointer-events:auto; }
+  @media (prefers-reduced-motion: reduce){ .detail-page{ transition:none; } }
+  .detail-page-header{
+    display:flex; align-items:center; gap:4px; padding:10px 8px; border-bottom:1px solid var(--line);
+    flex-shrink:0; background:var(--card);
+  }
+  .detail-back-btn{
+    width:34px; height:34px; border-radius:50%; border:none; background:none; font-size:20px;
+    color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .detail-back-btn:hover{ background:var(--line); }
+  .detail-back-btn:focus-visible{ outline:2px solid var(--brand-dark); outline-offset:2px; }
+  .detail-page-title{ flex:1; text-align:center; font-weight:700; font-size:14px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .detail-page-spacer{ width:34px; flex-shrink:0; }
+  .detail-page-body{ flex:1; overflow-y:auto; padding:16px 16px 28px; }
+  body.detail-locked{ overflow:hidden; }
+
   .detail-image{ width:100%; height:220px; border-radius:14px; overflow:hidden; background:var(--brand-tint); display:flex; align-items:center; justify-content:center; font-size:46px; margin-bottom:12px; }
   .detail-image img{ width:100%; height:100%; object-fit:cover; }
   .chip-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
@@ -267,6 +291,7 @@
     .fab-btn{ right:16px; left:auto; transform:none; }
     .bottom-nav{ left:0; transform:none; }
     .admin-corner{ right:14px; }
+    .detail-page-wrap{ left:0; margin-left:0; width:100%; }
   }
   @media (max-width:480px){
     .brand-text h1{ font-size:18px; }
@@ -346,6 +371,17 @@
   <div class="admin-corner" id="adminCorner">
     <button class="admin-corner-btn" id="corruptToggleBtn" hidden>오염 모드</button>
     <button class="admin-corner-btn" id="adminToggleBtn">관리자</button>
+  </div>
+</div>
+
+<div class="detail-page-wrap">
+  <div class="detail-page" id="detailPage">
+    <header class="detail-page-header">
+      <button class="detail-back-btn" id="detailBackBtn" aria-label="뒤로가기">←</button>
+      <span class="detail-page-title" id="detailPageTitle">게시글</span>
+      <span class="detail-page-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="detail-page-body" id="detailPageBody"></div>
   </div>
 </div>
 
@@ -550,7 +586,22 @@ el('homeTabBtn').addEventListener('click', () => {
 function openModal(html){ el('modalBody').innerHTML = html; el('overlay').hidden = false; }
 function closeModal(){ el('overlay').hidden = true; el('modalBody').innerHTML = ''; }
 el('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
-document.addEventListener('keydown', (e) => { if(e.key==='Escape') closeModal(); });
+document.addEventListener('keydown', (e) => {
+  if(e.key !== 'Escape') return;
+  if(!el('overlay').hidden) closeModal();
+  else if(el('detailPage').classList.contains('open')) closeDetailPage();
+});
+
+/* ---------- Detail page (full-screen slide-over, like a Karrot post screen) ---------- */
+function openDetailPage(){
+  el('detailPage').classList.add('open');
+  document.body.classList.add('detail-locked');
+}
+function closeDetailPage(){
+  el('detailPage').classList.remove('open');
+  document.body.classList.remove('detail-locked');
+}
+el('detailBackBtn').addEventListener('click', closeDetailPage);
 
 /* ---------- Admin login/logout ---------- */
 el('adminToggleBtn').addEventListener('click', () => {
@@ -681,17 +732,17 @@ function renderDetailHtml(item){
       <span class="price-pill-lg">${formatWon(item.price)}</span>
       <div class="detail-actions">${buildDetailActions(item)}</div>
     </div>
-    <div class="modal-actions"><button class="btn btn-ghost" id="detailClose">닫기</button></div>
   `;
 }
 function openDetailModal(postId){
   const item = marketData.posts.find(p => p.id === postId);
   if(!item) return;
-  openModal(renderDetailHtml(item));
+  el('detailPageBody').innerHTML = renderDetailHtml(item);
+  el('detailPageTitle').textContent = item.type === 'sell' ? '팔아요' : '살게요';
+  openDetailPage();
   bindDetailEvents(item);
 }
 function bindDetailEvents(item){
-  el('detailClose').addEventListener('click', closeModal);
   const buyBtn = document.getElementById('detailBuyBtn');
   if(buyBtn) buyBtn.addEventListener('click', () => openBuyModal(item.id));
   const eatBtn = document.getElementById('detailEatBtn');
@@ -764,6 +815,7 @@ function openBuyModal(postId){
     try{
       await performPurchase(item.id, buyerName);
       closeModal();
+      closeDetailPage();
     }catch(e){
       if(e.message === 'sold') el('buyError').textContent = '앗, 방금 다른 사람이 먼저 구매했어요.';
       else if(e.message === 'short') el('buyError').textContent = '그 사이 구마pay가 부족해졌어요.';
@@ -789,6 +841,7 @@ function openDeleteModal(postId){
     try{
       await deleteDoc(doc(db, 'posts', postId));
       closeModal();
+      closeDetailPage();
     }catch(e){ alert('삭제 중 문제가 생겼어요. 다시 시도해주세요.'); }
   });
   el('delCancel').addEventListener('click', closeModal);
