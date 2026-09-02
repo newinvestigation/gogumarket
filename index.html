@@ -183,6 +183,8 @@
   .ledger-table td:first-child{ border-left:1px solid var(--brand-tint2); border-radius:10px 0 0 10px; }
   .ledger-table td:last-child{ border-right:1px solid var(--brand-tint2); border-radius:0 10px 10px 0; }
   .ledger-table td.num{ font-family:'Noto Sans Mono', monospace; text-align:right; }
+  .ledger-table .col-job{ max-width:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ledger-table .col-applicant{ white-space:nowrap; }
   .row-del{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px; }
 
   /* ---------- Floating write button ---------- */
@@ -949,8 +951,8 @@ function renderMyPageHtml(purchases, topups, applications){
       <p class="mypage-section-title">알바 지원 내역</p>
       ${applications.length === 0 ? `<p class="mypage-empty">아직 지원 내역이 없어요.</p>` : `
         <table class="ledger-table">
-          <thead><tr><th>알바</th><th>지원자</th><th>한마디</th><th></th></tr></thead>
-          <tbody>${applications.map(a => `<tr><td>${escapeHtml(a.jobTitle)}</td><td>${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
+          <thead><tr><th class="col-job">알바</th><th class="col-applicant">지원자</th><th>한마디</th><th></th></tr></thead>
+          <tbody>${applications.map(a => `<tr><td class="col-job" title="${escapeHtml(a.jobTitle)}">${escapeHtml(a.jobTitle)}</td><td class="col-applicant">${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
         </table>`}
     ` : ''}
     <div class="modal-actions"><button class="btn btn-ghost" id="mypageClose">닫기</button></div>
@@ -1180,8 +1182,8 @@ function renderDarkJobApplicationsHtml(applications){
     <h3>알바 지원 내역</h3>
     ${applications.length === 0 ? `<p class="mypage-empty">아직 지원 내역이 없어요.</p>` : `
       <table class="ledger-table">
-        <thead><tr><th>알바</th><th>지원자</th><th>한마디</th><th></th></tr></thead>
-        <tbody>${applications.map(a => `<tr><td>${escapeHtml(a.jobTitle)}</td><td>${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
+        <thead><tr><th class="col-job">알바</th><th class="col-applicant">지원자</th><th>한마디</th><th></th></tr></thead>
+        <tbody>${applications.map(a => `<tr><td class="col-job" title="${escapeHtml(a.jobTitle)}">${escapeHtml(a.jobTitle)}</td><td class="col-applicant">${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
       </table>`}
     <div class="modal-actions"><button class="btn btn-ghost" id="djAppsClose">닫기</button></div>
   `;
