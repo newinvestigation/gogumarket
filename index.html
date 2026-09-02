@@ -79,15 +79,17 @@
   body{
     min-height:100vh;
     font-family:'Noto Sans KR', sans-serif; color:var(--ink);
-    display:flex; justify-content:center;
+    display:flex; justify-content:center; align-items:flex-start;
     padding:36px 20px;
     background:#F1F1F3;
   }
   .app{
     max-width:420px; width:100%; margin:0; background:var(--bg);
-    padding-bottom:96px; position:relative;
+    position:relative;
     border-radius:28px; overflow:hidden;
     box-shadow:0 20px 50px rgba(29,30,34,0.14), 0 1px 0 rgba(255,255,255,0.6) inset;
+    height:calc(100vh - 72px); height:calc(100dvh - 72px);
+    display:flex; flex-direction:column;
   }
 
   /* ---------- Topbar ---------- */
@@ -96,6 +98,7 @@
     padding:16px 16px 12px;
     background:var(--card);
     border-bottom:1px solid var(--line);
+    flex-shrink:0;
   }
   .brand{ display:flex; align-items:center; gap:8px; min-width:0; }
   .logo-mascot{ width:34px; height:34px; flex-shrink:0; }
@@ -116,7 +119,7 @@
   .gumapay-balance{ font-weight:700; font-size:13px; color:var(--ink); }
 
   /* ---------- Filter chips ---------- */
-  .filters{ display:flex; gap:6px; padding:12px 16px 0; flex-wrap:wrap; }
+  .filters{ display:flex; gap:6px; padding:12px 16px 0; flex-wrap:wrap; flex-shrink:0; }
   .chip-btn{
     font-weight:700; font-size:13px; background:var(--line); color:var(--ink-soft);
     border:none; border-radius:999px; padding:8px 14px; cursor:pointer; transition:background .12s ease,color .12s ease;
@@ -124,7 +127,7 @@
   .chip-btn.active{ background:var(--brand); color:#fff; }
   .chip-btn:focus-visible{ outline:2px solid var(--brand-dark); outline-offset:2px; }
 
-  main{ padding:14px 16px 4px; }
+  main{ flex:1; min-height:0; overflow-y:auto; padding:14px 16px 100px; }
   .section-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:10px; }
   .section-head h2{ font-weight:900; font-size:16px; margin:0; color:var(--ink); }
 
@@ -172,7 +175,7 @@
   .dark-item .dark-title{ font-weight:700; font-size:14px; margin:0; }
   .dark-item .dark-sub{ font-size:12px; color:var(--ink-soft); margin:2px 0 0; }
   .dark-item .dark-badge{ font-weight:700; font-size:12.5px; background:var(--brand-deep); color:var(--gold); border-radius:999px; padding:4px 10px; white-space:nowrap; flex-shrink:0; }
-  .mode-flash{ position:fixed; inset:0; z-index:45; background:#000; opacity:0; pointer-events:none; transition:opacity .08s ease; }
+  .mode-flash{ position:absolute; inset:0; z-index:45; background:#000; opacity:0; pointer-events:none; transition:opacity .08s ease; }
   .serious-italic{ font-family:'Gowun Batang', serif; font-style:italic; font-weight:700; display:inline-block; transform:skewX(-9deg); letter-spacing:0.5px; }
   .loading-msg{ padding:40px 12px; text-align:center; color:var(--ink-soft); font-size:13px; }
 
@@ -187,7 +190,7 @@
 
   /* ---------- Floating write button ---------- */
   .fab-btn{
-    position:fixed; bottom:74px; right:calc(50% - 210px + 16px);
+    position:absolute; bottom:74px; right:16px;
     width:52px; height:52px; border-radius:50%; background:var(--brand); color:#fff;
     border:none; box-shadow:0 8px 18px rgba(132,82,214,0.4); cursor:pointer;
     display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; z-index:41;
@@ -198,8 +201,8 @@
 
   /* ---------- Bottom tab bar ---------- */
   .bottom-nav{
-    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
-    width:100%; max-width:420px; display:flex; background:var(--card);
+    position:absolute; bottom:0; left:0; right:0;
+    display:flex; background:var(--card);
     border-top:1px solid var(--line); z-index:39; padding-bottom:env(safe-area-inset-bottom,0);
   }
   .bottom-nav-item{
@@ -212,7 +215,7 @@
   .bottom-nav-item:focus-visible{ outline:2px solid var(--brand-dark); outline-offset:-2px; }
 
   /* ---------- Fixed admin corner ---------- */
-  .admin-corner{ position:fixed; right:calc(50% - 210px + 14px); bottom:140px; z-index:40; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .admin-corner{ position:absolute; right:14px; bottom:140px; z-index:40; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   .admin-corner-btn{
     font-weight:700; font-size:11px; background:var(--card); color:var(--ink-soft);
     border:1.5px solid var(--line); border-radius:999px; padding:7px 12px; cursor:pointer;
@@ -222,9 +225,9 @@
   .admin-corner-btn.on{ background:var(--brand); color:#fff; border-color:var(--brand); opacity:1; }
 
   /* ---------- Modal ---------- */
-  .overlay{ position:fixed; inset:0; background:rgba(29,30,34,0.4); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .overlay{ position:absolute; inset:0; background:rgba(29,30,34,0.4); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
   .overlay[hidden]{ display:none; }
-  .modal{ background:var(--bg); border-radius:20px; width:100%; max-width:400px; max-height:88vh; overflow-y:auto; padding:22px 20px 20px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
+  .modal{ background:var(--bg); border-radius:20px; width:100%; max-width:400px; max-height:82%; overflow-y:auto; padding:22px 20px 20px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
   .modal h3{ font-weight:900; font-size:18px; margin:0 0 4px; color:var(--ink); }
   .modal p.hint{ margin:0 0 14px; font-size:12px; color:var(--ink-soft); line-height:1.5; }
   .field{ margin-bottom:12px; }
@@ -245,11 +248,10 @@
   .img-preview{ width:100%; max-width:180px; border-radius:12px; margin-top:8px; display:none; object-fit:cover; }
 
   /* ---------- Detail page (full-screen slide-over, like Karrot's post screen) ---------- */
-  .detail-page-wrap{ position:fixed; top:0; bottom:0; left:50%; margin-left:-210px; width:420px; max-width:100%; z-index:44; pointer-events:none; overflow:hidden; }
   .detail-page{
     position:absolute; inset:0; background:var(--bg); display:flex; flex-direction:column;
     transform:translateX(100%); transition:transform .32s cubic-bezier(.22,.61,.36,1);
-    pointer-events:none;
+    z-index:44; pointer-events:none;
   }
   .detail-page.open{ transform:translateX(0); pointer-events:auto; }
   @media (prefers-reduced-motion: reduce){ .detail-page{ transition:none; } }
@@ -271,7 +273,7 @@
     padding:12px 16px calc(12px + env(safe-area-inset-bottom,0));
     display:flex; align-items:center; gap:10px;
   }
-  body.detail-locked{ overflow:hidden; }
+  body.detail-locked main{ overflow:hidden; }
 
   .detail-image{ width:100%; height:220px; border-radius:14px; overflow:hidden; background:var(--brand-tint); display:flex; align-items:center; justify-content:center; font-size:46px; margin-bottom:12px; }
   .detail-image img{ width:100%; height:100%; object-fit:cover; }
@@ -291,16 +293,11 @@
 
   @media (max-width:640px){
     body{ padding:0; background:var(--bg); }
-    .app{ border-radius:0; box-shadow:none; max-width:100%; }
-    .bottom-nav, .fab-btn{ max-width:100%; }
-    .fab-btn{ right:16px; left:auto; transform:none; }
-    .bottom-nav{ left:0; transform:none; }
-    .admin-corner{ right:14px; }
-    .detail-page-wrap{ left:0; margin-left:0; width:100%; }
+    .app{ border-radius:0; box-shadow:none; max-width:100%; height:100vh; height:100dvh; }
   }
   @media (max-width:480px){
     .brand-text h1{ font-size:18px; }
-    main{ padding:12px 12px 4px; }
+    main{ padding:12px 12px 100px; }
   }
 </style>
 </head>
@@ -377,9 +374,7 @@
     <button class="admin-corner-btn" id="corruptToggleBtn" hidden>오염 모드</button>
     <button class="admin-corner-btn" id="adminToggleBtn">관리자</button>
   </div>
-</div>
 
-<div class="detail-page-wrap">
   <div class="detail-page" id="detailPage">
     <header class="detail-page-header">
       <button class="detail-back-btn" id="detailBackBtn" aria-label="뒤로가기">←</button>
@@ -389,11 +384,11 @@
     <div class="detail-page-body" id="detailPageBody"></div>
     <div class="detail-page-footer" id="detailPageFooter"></div>
   </div>
-</div>
 
-<div class="mode-flash" id="modeFlash" aria-hidden="true"></div>
-<div class="overlay" id="overlay" hidden>
-  <div class="modal" id="modalBody"></div>
+  <div class="mode-flash" id="modeFlash" aria-hidden="true"></div>
+  <div class="overlay" id="overlay" hidden>
+    <div class="modal" id="modalBody"></div>
+  </div>
 </div>
 
 <script type="module">
@@ -584,7 +579,7 @@ el('homeTabBtn').addEventListener('click', () => {
   document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.toggle('active', b === el('homeTabBtn')));
   renderFeed();
-  el('app').scrollIntoView({ behavior:'smooth', block:'start' });
+  el('feed').closest('main').scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 /* ---------- Modal helpers ---------- */
