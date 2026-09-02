@@ -120,6 +120,7 @@
 
   /* ---------- Filter chips ---------- */
   .filters{ display:flex; gap:6px; padding:12px 16px 0; flex-wrap:wrap; flex-shrink:0; }
+  .filters[hidden]{ display:none; }
   .chip-btn{
     font-weight:700; font-size:13px; background:var(--line); color:var(--ink-soft);
     border:none; border-radius:999px; padding:8px 14px; cursor:pointer; transition:background .12s ease,color .12s ease;
@@ -338,7 +339,7 @@
     </div>
   </header>
 
-  <nav class="filters">
+  <nav class="filters" id="filtersNav">
     <button class="chip-btn active" data-filter="all">전체</button>
     <button class="chip-btn" data-filter="sell">팔아요</button>
     <button class="chip-btn" data-filter="buy">살게요</button>
@@ -346,7 +347,7 @@
 
   <main>
     <div class="section-head">
-      <h2>동네 게시판</h2>
+      <h2 id="boardTitle">동네 게시판</h2>
     </div>
     <div class="feed" id="feed">
       <div class="loading-msg">고구마 캐는 중…</div>
@@ -432,6 +433,7 @@ import {
 let marketData = { balance: 0, posts: [] };
 let isAdmin = false;
 let currentFilter = 'all';
+let currentBoard = 'market'; // 'market' | 'jobs'
 let corruptedMode = false;
 let db = null, postsCol = null, walletRef = null, purchasesCol = null, topupsCol = null, settingsRef = null, darkJobsCol = null, darkPlacesCol = null, darkJobApplicationsCol = null;
 let currentDarkJobs = [];
@@ -530,7 +532,26 @@ function render(){
   renderFeed();
 }
 
+function setActiveTab(btn){
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.toggle('active', b === btn));
+}
+function showMarketBoard(){
+  currentBoard = 'market';
+  el('filtersNav').hidden = false;
+  el('boardTitle').textContent = '동네 게시판';
+  setActiveTab(el('homeTabBtn'));
+  renderFeed();
+}
+async function showJobsBoard(){
+  currentBoard = 'jobs';
+  el('filtersNav').hidden = true;
+  el('boardTitle').textContent = '어둠 알바';
+  setActiveTab(el('darkJobBtn'));
+  await renderJobsBoard();
+}
+
 function renderFeed(){
+  if(currentBoard !== 'market') return;
   const feed = el('feed');
   if(!isConfigured){
     feed.innerHTML = `<div class="empty">⚙️ 아직 Firebase 설정이 안 됐어요.<br>코드 위쪽 &lt;script&gt; 안의 firebaseConfig 값을 채워주세요.</div>`;
@@ -578,8 +599,7 @@ document.querySelectorAll('.chip-btn').forEach(btn => {
 el('homeTabBtn').addEventListener('click', () => {
   currentFilter = 'all';
   document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
-  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.toggle('active', b === el('homeTabBtn')));
-  renderFeed();
+  showMarketBoard();
   el('feed').closest('main').scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -628,7 +648,10 @@ el('adminToggleBtn').addEventListener('click', () => {
 });
 
 /* ---------- New post (팔아요/살게요) ---------- */
-el('newPostBtn').addEventListener('click', () => openPostModal());
+el('newPostBtn').addEventListener('click', () => {
+  if(currentBoard === 'jobs') openDarkJobFormModal();
+  else openPostModal();
+});
 function openPostModal(){
   if(!isAdmin) return;
   let selectedType = 'sell';
@@ -1028,45 +1051,41 @@ function openLockedModal(title){
   `);
   el('lockedClose').addEventListener('click', closeModal);
 }
-el('darkJobBtn').addEventListener('click', () => { corruptedMode ? openDarkJobsModal() : openLockedModal('어둠 알바'); });
+el('darkJobBtn').addEventListener('click', () => {
+  if(!corruptedMode){ openLockedModal('어둠 알바'); return; }
+  showJobsBoard();
+  el('feed').closest('main').scrollTo({ top: 0, behavior: 'smooth' });
+});
 el('darkNearBtn').addEventListener('click', () => { corruptedMode ? openDarkPlacesModal() : openLockedModal('가까운 어둠'); });
 
-/* ---------- 어둠 알바 게시판 ---------- */
+/* ---------- 어둠 알바 게시판 (동네 게시판과 같은 자리에서 탭 전환) ---------- */
 async function fetchDarkJobs(){
   const snap = await getDocs(query(darkJobsCol, orderBy('createdAt', 'desc'), limit(100)));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-async function openDarkJobsModal(){
-  openModal(`<h3>어둠 알바</h3><p class="hint">불러오는 중…</p>`);
+async function renderJobsBoard(){
+  const feed = el('feed');
+  feed.innerHTML = `<div class="loading-msg">알바 찾는 중…</div>`;
   currentDarkJobs = await fetchDarkJobs();
-  openModal(renderDarkJobsHtml(currentDarkJobs));
-  bindDarkJobsEvents();
+  if(currentBoard !== 'jobs') return;
+  feed.innerHTML = renderDarkJobsFeedHtml(currentDarkJobs);
+  bindDarkJobsFeedEvents();
 }
-function renderDarkJobsHtml(jobs){
-  return `
-    <h3>어둠 알바</h3>
-    <p class="hint">일할 시간이에요!</p>
-    ${isAdmin ? `<button class="btn btn-primary" id="djNewBtn" style="width:100%; margin-bottom:12px;">+ 알바 등록</button>` : ''}
-    ${jobs.length === 0 ? `<p class="mypage-empty">아직 올라온 알바가 없어요.</p>` : `
-      <div class="feed">
-        ${jobs.map(j => `
-          <div class="post-row" data-djopen="${j.id}" role="button" tabindex="0">
-            <div class="post-thumb thumb-sell">🌑</div>
-            <div class="post-main">
-              <p class="post-title">${escapeHtml(j.title)}</p>
-              <p class="post-meta">${escapeHtml(j.employerName)}</p>
-              <span class="post-price">시급 ${formatWon(j.wage)}</span>
-            </div>
-          </div>
-        `).join('')}
-      </div>`}
-    <div class="modal-actions"><button class="btn btn-ghost" id="darkClose">닫기</button></div>
-  `;
+function renderDarkJobsFeedHtml(jobs){
+  if(jobs.length === 0){
+    return `<div class="empty">🌑 아직 올라온 알바가 없어요.${isAdmin ? ' + 버튼으로 알바를 올려보세요.' : ''}</div>`;
+  }
+  return jobs.map(j => `
+    <div class="post-row" data-djopen="${j.id}" role="button" tabindex="0">
+      <div class="post-thumb thumb-sell">🌑</div>
+      <div class="post-main">
+        <p class="post-title">${escapeHtml(j.title)}</p>
+        <p class="post-meta">${escapeHtml(j.employerName)}</p>
+        <span class="post-price">시급 ${formatWon(j.wage)}</span>
+      </div>
+    </div>`).join('');
 }
-function bindDarkJobsEvents(){
-  el('darkClose').addEventListener('click', closeModal);
-  const newBtn = document.getElementById('djNewBtn');
-  if(newBtn) newBtn.addEventListener('click', openDarkJobFormModal);
+function bindDarkJobsFeedEvents(){
   document.querySelectorAll('[data-djopen]').forEach(row => {
     row.addEventListener('click', () => openDarkJobDetail(row.dataset.djopen));
     row.addEventListener('keydown', (e) => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openDarkJobDetail(row.dataset.djopen); } });
@@ -1085,7 +1104,6 @@ function renderDarkJobDetailFooterHtml(job){
 function openDarkJobDetail(jobId){
   const job = currentDarkJobs.find(j => j.id === jobId);
   if(!job) return;
-  closeModal();
   el('detailPageBody').innerHTML = `
     <div class="detail-image">🌑</div>
     <h3>${escapeHtml(job.title)}</h3>
@@ -1115,6 +1133,7 @@ function openDarkJobDeleteModal(job){
       await deleteDoc(doc(db, 'darkjobs', job.id));
       closeModal();
       closeDetailPage();
+      renderJobsBoard();
     }catch(e){ alert('삭제 중 문제가 생겼어요. 다시 시도해주세요.'); }
   });
   el('djDelCancel').addEventListener('click', closeModal);
@@ -1177,10 +1196,11 @@ function openDarkJobFormModal(){
     if(wage === '' || Number(wage) < 0){ el('djError').textContent = '시급을 올바르게 적어주세요.'; return; }
     try{
       await addDoc(darkJobsCol, { title, employerName, wage: Number(wage), createdAt: new Date().toISOString() });
-      await openDarkJobsModal();
+      closeModal();
+      renderJobsBoard();
     }catch(e){ el('djError').textContent = '등록 중 문제가 생겼어요. 다시 시도해주세요.'; }
   });
-  el('djCancel').addEventListener('click', async () => { await openDarkJobsModal(); });
+  el('djCancel').addEventListener('click', closeModal);
 }
 
 /* ---------- 가까운 어둠 게시판 ---------- */
@@ -1299,6 +1319,7 @@ function boot(){
         el('corruptToggleBtn').textContent = corruptedMode ? '오염 모드 ON' : '오염 모드 OFF';
         el('corruptToggleBtn').classList.toggle('on', corruptedMode);
       }
+      if(!corruptedMode && currentBoard === 'jobs') showMarketBoard();
     };
     if(!settingsInitialized || newVal === corruptedMode){
       settingsInitialized = true;
