@@ -433,7 +433,8 @@ let marketData = { balance: 0, posts: [] };
 let isAdmin = false;
 let currentFilter = 'all';
 let corruptedMode = false;
-let db = null, postsCol = null, walletRef = null, purchasesCol = null, topupsCol = null, settingsRef = null, darkJobsCol = null, darkPlacesCol = null;
+let db = null, postsCol = null, walletRef = null, purchasesCol = null, topupsCol = null, settingsRef = null, darkJobsCol = null, darkPlacesCol = null, darkJobApplicationsCol = null;
+let currentDarkJobs = [];
 
 const el = (id) => document.getElementById(id);
 const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('YOUR_');
@@ -859,6 +860,10 @@ async function fetchTopups(){
   const snap = await getDocs(query(topupsCol, orderBy('addedAt', 'desc'), limit(100)));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
+async function fetchDarkJobApplications(){
+  const snap = await getDocs(query(darkJobApplicationsCol, orderBy('appliedAt', 'desc'), limit(100)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 function openBlockedModal(){
   openModal(`
     <div style="text-align:center; padding:24px 0 8px;">
@@ -872,11 +877,13 @@ el('mypageBtn').addEventListener('click', () => { corruptedMode ? openBlockedMod
 el('gumapayChip').addEventListener('click', () => { corruptedMode ? openBlockedModal() : openMyPage(); });
 async function openMyPage(){
   openModal(`<h3>마이페이지</h3><p class="hint">불러오는 중…</p>`);
-  const [purchases, topups] = await Promise.all([fetchPurchases(), fetchTopups()]);
-  openModal(renderMyPageHtml(purchases, topups));
+  const [purchases, topups, applications] = await Promise.all([
+    fetchPurchases(), fetchTopups(), isAdmin ? fetchDarkJobApplications() : Promise.resolve([])
+  ]);
+  openModal(renderMyPageHtml(purchases, topups, applications));
   bindMyPageEvents();
 }
-function renderMyPageHtml(purchases, topups){
+function renderMyPageHtml(purchases, topups, applications){
   return `
     <h3>마이페이지</h3>
     <div class="mypage-balance"><span>구마pay 잔액</span><span class="num">${formatWon(marketData.balance)}</span></div>
@@ -897,6 +904,14 @@ function renderMyPageHtml(purchases, topups){
         <thead><tr><th>날짜</th><th>판매자</th><th>물건</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
         <tbody>${topups.map(t => `<tr><td>${formatDate(t.addedAt)}</td><td>${escapeHtml(t.sellerName)}</td><td>${escapeHtml(t.itemName)}</td><td class="num">${formatWon(t.amount)}</td>${isAdmin ? `<td><button class="row-del" data-topup-del="${t.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
       </table>`}
+    ${isAdmin ? `
+      <p class="mypage-section-title">알바 지원 내역</p>
+      ${applications.length === 0 ? `<p class="mypage-empty">아직 지원 내역이 없어요.</p>` : `
+        <table class="ledger-table">
+          <thead><tr><th>날짜</th><th>알바</th><th>지원자</th><th>한마디</th><th></th></tr></thead>
+          <tbody>${applications.map(a => `<tr><td>${formatDate(a.appliedAt)}</td><td>${escapeHtml(a.jobTitle)}</td><td>${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
+        </table>`}
+    ` : ''}
     <div class="modal-actions"><button class="btn btn-ghost" id="mypageClose">닫기</button></div>
   `;
 }
@@ -916,6 +931,13 @@ function bindMyPageEvents(){
   document.querySelectorAll('[data-purchase-del]').forEach(b => {
     b.addEventListener('click', async () => {
       try{ await deleteDoc(doc(db, 'purchases', b.dataset.purchaseDel)); }
+      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
+      await openMyPage();
+    });
+  });
+  document.querySelectorAll('[data-djapp-del]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{ await deleteDoc(doc(db, 'darkjobapplications', b.dataset.djappDel)); }
       catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
       await openMyPage();
     });
@@ -1016,8 +1038,8 @@ async function fetchDarkJobs(){
 }
 async function openDarkJobsModal(){
   openModal(`<h3>어둠 알바</h3><p class="hint">불러오는 중…</p>`);
-  const jobs = await fetchDarkJobs();
-  openModal(renderDarkJobsHtml(jobs));
+  currentDarkJobs = await fetchDarkJobs();
+  openModal(renderDarkJobsHtml(currentDarkJobs));
   bindDarkJobsEvents();
 }
 function renderDarkJobsHtml(jobs){
@@ -1025,17 +1047,19 @@ function renderDarkJobsHtml(jobs){
     <h3>어둠 알바</h3>
     <p class="hint">일할 시간이에요!</p>
     ${isAdmin ? `<button class="btn btn-primary" id="djNewBtn" style="width:100%; margin-bottom:12px;">+ 알바 등록</button>` : ''}
-    ${jobs.length === 0 ? `<p class="mypage-empty">아직 올라온 알바가 없어요.</p>` : jobs.map(j => `
-      <div class="dark-item">
-        <span class="dark-icon">🌑</span>
-        <div class="dark-main">
-          <p class="dark-title">${escapeHtml(j.title)}</p>
-          <p class="dark-sub">${escapeHtml(j.employerName)}</p>
-        </div>
-        <span class="dark-badge">시급 ${formatWon(j.wage)}</span>
-        ${isAdmin ? `<button class="btn btn-ghost btn-small" data-dj-del="${j.id}">삭제</button>` : ''}
-      </div>
-    `).join('')}
+    ${jobs.length === 0 ? `<p class="mypage-empty">아직 올라온 알바가 없어요.</p>` : `
+      <div class="feed">
+        ${jobs.map(j => `
+          <div class="post-row" data-djopen="${j.id}" role="button" tabindex="0">
+            <div class="post-thumb thumb-sell">🌑</div>
+            <div class="post-main">
+              <p class="post-title">${escapeHtml(j.title)}</p>
+              <p class="post-meta">${escapeHtml(j.employerName)}</p>
+              <span class="post-price">시급 ${formatWon(j.wage)}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>`}
     <div class="modal-actions"><button class="btn btn-ghost" id="darkClose">닫기</button></div>
   `;
 }
@@ -1043,13 +1067,93 @@ function bindDarkJobsEvents(){
   el('darkClose').addEventListener('click', closeModal);
   const newBtn = document.getElementById('djNewBtn');
   if(newBtn) newBtn.addEventListener('click', openDarkJobFormModal);
-  document.querySelectorAll('[data-dj-del]').forEach(b => {
-    b.addEventListener('click', async () => {
-      try{ await deleteDoc(doc(db, 'darkjobs', b.dataset.djDel)); }
-      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
-      await openDarkJobsModal();
-    });
+  document.querySelectorAll('[data-djopen]').forEach(row => {
+    row.addEventListener('click', () => openDarkJobDetail(row.dataset.djopen));
+    row.addEventListener('keydown', (e) => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openDarkJobDetail(row.dataset.djopen); } });
   });
+}
+
+/* ---------- 어둠 알바 상세 페이지 + 지원하기 ---------- */
+function renderDarkJobDetailFooterHtml(job){
+  let actions = `<button class="btn btn-primary" id="djApplyBtn">지원하기</button>`;
+  if(isAdmin) actions += `<button class="btn btn-ghost btn-small" id="djDetailDeleteBtn">삭제</button>`;
+  return `
+    <span class="price-pill-lg">시급 ${formatWon(job.wage)}</span>
+    <div class="detail-actions">${actions}</div>
+  `;
+}
+function openDarkJobDetail(jobId){
+  const job = currentDarkJobs.find(j => j.id === jobId);
+  if(!job) return;
+  closeModal();
+  el('detailPageBody').innerHTML = `
+    <div class="detail-image">🌑</div>
+    <h3>${escapeHtml(job.title)}</h3>
+    <p class="detail-meta">알바를 구하는 어둠 · ${escapeHtml(job.employerName)}</p>
+  `;
+  el('detailPageFooter').innerHTML = renderDarkJobDetailFooterHtml(job);
+  el('detailPageTitle').textContent = '어둠 알바';
+  openDetailPage();
+  bindDarkJobDetailEvents(job);
+}
+function bindDarkJobDetailEvents(job){
+  el('djApplyBtn').addEventListener('click', () => openDarkJobApplyModal(job));
+  const delBtn = document.getElementById('djDetailDeleteBtn');
+  if(delBtn) delBtn.addEventListener('click', () => openDarkJobDeleteModal(job));
+}
+function openDarkJobDeleteModal(job){
+  openModal(`
+    <h3>알바 삭제</h3>
+    <p class="hint">"${escapeHtml(job.title)}" 알바를 삭제할까요?</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="djDelCancel">취소</button>
+      <button class="btn btn-danger" id="djDelSubmit">삭제하기</button>
+    </div>
+  `);
+  el('djDelSubmit').addEventListener('click', async () => {
+    try{
+      await deleteDoc(doc(db, 'darkjobs', job.id));
+      closeModal();
+      closeDetailPage();
+    }catch(e){ alert('삭제 중 문제가 생겼어요. 다시 시도해주세요.'); }
+  });
+  el('djDelCancel').addEventListener('click', closeModal);
+}
+function openDarkJobApplyConfirmModal(){
+  openModal(`
+    <div style="text-align:center; padding:24px 0 8px;">
+      <p class="glitch-label" style="margin:0; font-size:22px;"><span class="serious-italic">사장님이 곧 도착해요!</span></p>
+    </div>
+    <div class="modal-actions" style="justify-content:center;"><button class="btn btn-ghost" id="djApplyConfirmClose">닫기</button></div>
+  `);
+  el('djApplyConfirmClose').addEventListener('click', closeModal);
+}
+function openDarkJobApplyModal(job){
+  openModal(`
+    <h3>지원하기</h3>
+    <p class="hint">${escapeHtml(job.title)} · ${escapeHtml(job.employerName)}</p>
+    <div class="field"><label for="djApplyNameInput">본명</label><input type="text" id="djApplyNameInput" maxlength="30"></div>
+    <div class="field"><label for="djApplyMsgInput">사장님께 한마디!</label><textarea id="djApplyMsgInput" maxlength="200"></textarea></div>
+    <p class="error-msg" id="djApplyError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="djApplyCancel">취소</button>
+      <button class="btn btn-primary" id="djApplySubmit">지원하기</button>
+    </div>
+  `);
+  el('djApplyNameInput').focus();
+  el('djApplySubmit').addEventListener('click', async () => {
+    const applicantName = el('djApplyNameInput').value.trim();
+    const message = el('djApplyMsgInput').value.trim();
+    if(!applicantName){ el('djApplyError').textContent = '본명을 적어야 지원할 수 있어요.'; return; }
+    try{
+      await addDoc(darkJobApplicationsCol, {
+        jobId: job.id, jobTitle: job.title, employerName: job.employerName,
+        applicantName, message, appliedAt: new Date().toISOString()
+      });
+      openDarkJobApplyConfirmModal();
+    }catch(e){ el('djApplyError').textContent = '지원 중 문제가 생겼어요. 다시 시도해주세요.'; }
+  });
+  el('djApplyCancel').addEventListener('click', closeModal);
 }
 function openDarkJobFormModal(){
   if(!isAdmin) return;
@@ -1167,6 +1271,7 @@ function boot(){
   settingsRef = doc(db, 'meta', 'settings');
   darkJobsCol = collection(db, 'darkjobs');
   darkPlacesCol = collection(db, 'darkplaces');
+  darkJobApplicationsCol = collection(db, 'darkjobapplications');
 
   onSnapshot(query(postsCol, orderBy('createdAt', 'desc')), (snap) => {
     marketData.posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
