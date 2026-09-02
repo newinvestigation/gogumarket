@@ -344,6 +344,7 @@
   <main>
     <div class="section-head">
       <h2 id="boardTitle">동네 게시판</h2>
+      <div id="sectionHeadActions"></div>
     </div>
     <div class="feed" id="feed">
       <div class="loading-msg">고구마 캐는 중…</div>
@@ -525,17 +526,28 @@ function render(){
   el('corruptToggleBtn').hidden = !isAdmin;
   el('corruptToggleBtn').textContent = corruptedMode ? '오염 모드 ON' : '오염 모드 OFF';
   el('corruptToggleBtn').classList.toggle('on', corruptedMode);
+  updateSectionHeadActions();
   renderFeed();
 }
 
 function setActiveTab(btn){
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.toggle('active', b === btn));
 }
+function updateSectionHeadActions(){
+  const actions = el('sectionHeadActions');
+  if(currentBoard === 'jobs' && isAdmin){
+    actions.innerHTML = `<button class="btn btn-ghost btn-small" id="djAppsBtn">지원 내역</button>`;
+    el('djAppsBtn').addEventListener('click', openDarkJobApplicationsModal);
+  }else{
+    actions.innerHTML = '';
+  }
+}
 function showMarketBoard(){
   currentBoard = 'market';
   el('filtersNav').hidden = false;
   el('boardTitle').textContent = '동네 게시판';
   setActiveTab(el('homeTabBtn'));
+  updateSectionHeadActions();
   renderFeed();
 }
 async function showJobsBoard(){
@@ -543,12 +555,14 @@ async function showJobsBoard(){
   el('filtersNav').hidden = true;
   el('boardTitle').textContent = '어둠 알바';
   setActiveTab(el('darkJobBtn'));
+  updateSectionHeadActions();
   await renderJobsBoard();
 }
 async function showPlacesBoard(){
   currentBoard = 'places';
   el('filtersNav').hidden = true;
   el('boardTitle').textContent = '가까운 어둠';
+  updateSectionHeadActions();
   setActiveTab(el('darkNearBtn'));
   await renderPlacesBoard();
 }
@@ -900,8 +914,8 @@ function openBlockedModal(){
   `);
   el('blockedClose').addEventListener('click', closeModal);
 }
-el('mypageBtn').addEventListener('click', () => { corruptedMode ? openBlockedModal() : openMyPage(); });
-el('gumapayChip').addEventListener('click', () => { corruptedMode ? openBlockedModal() : openMyPage(); });
+el('mypageBtn').addEventListener('click', () => { (corruptedMode && !isAdmin) ? openBlockedModal() : openMyPage(); });
+el('gumapayChip').addEventListener('click', () => { (corruptedMode && !isAdmin) ? openBlockedModal() : openMyPage(); });
 async function openMyPage(){
   openModal(`<h3>마이페이지</h3><p class="hint">불러오는 중…</p>`);
   const [purchases, topups, applications] = await Promise.all([
@@ -1154,6 +1168,33 @@ function openDarkJobApplyConfirmModal(){
     <div class="modal-actions" style="justify-content:center;"><button class="btn btn-ghost" id="djApplyConfirmClose">닫기</button></div>
   `);
   el('djApplyConfirmClose').addEventListener('click', closeModal);
+}
+async function openDarkJobApplicationsModal(){
+  openModal(`<h3>알바 지원 내역</h3><p class="hint">불러오는 중…</p>`);
+  const applications = await fetchDarkJobApplications();
+  openModal(renderDarkJobApplicationsHtml(applications));
+  bindDarkJobApplicationsEvents();
+}
+function renderDarkJobApplicationsHtml(applications){
+  return `
+    <h3>알바 지원 내역</h3>
+    ${applications.length === 0 ? `<p class="mypage-empty">아직 지원 내역이 없어요.</p>` : `
+      <table class="ledger-table">
+        <thead><tr><th>날짜</th><th>알바</th><th>지원자</th><th>한마디</th><th></th></tr></thead>
+        <tbody>${applications.map(a => `<tr><td>${formatDate(a.appliedAt)}</td><td>${escapeHtml(a.jobTitle)}</td><td>${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
+      </table>`}
+    <div class="modal-actions"><button class="btn btn-ghost" id="djAppsClose">닫기</button></div>
+  `;
+}
+function bindDarkJobApplicationsEvents(){
+  el('djAppsClose').addEventListener('click', closeModal);
+  document.querySelectorAll('[data-djapp-del]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{ await deleteDoc(doc(db, 'darkjobapplications', b.dataset.djappDel)); }
+      catch(e){ showToastError('삭제 중 문제가 생겼어요.'); }
+      await openDarkJobApplicationsModal();
+    });
+  });
 }
 function openDarkJobApplyModal(job){
   openModal(`
