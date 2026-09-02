@@ -266,6 +266,11 @@
   .detail-page-title{ flex:1; text-align:center; font-weight:700; font-size:14px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .detail-page-spacer{ width:34px; flex-shrink:0; }
   .detail-page-body{ flex:1; overflow-y:auto; padding:16px 16px 28px; }
+  .detail-page-footer{
+    flex-shrink:0; border-top:1px solid var(--line); background:var(--card);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom,0));
+    display:flex; align-items:center; gap:10px;
+  }
   body.detail-locked{ overflow:hidden; }
 
   .detail-image{ width:100%; height:220px; border-radius:14px; overflow:hidden; background:var(--brand-tint); display:flex; align-items:center; justify-content:center; font-size:46px; margin-bottom:12px; }
@@ -277,10 +282,10 @@
   .tag-sold{ background:var(--line); color:var(--ink-soft); }
   .tag-done{ background:var(--line); color:var(--ink-soft); }
   .detail-meta{ font-size:11.5px; color:var(--ink-soft); margin:2px 0 10px; }
-  .detail-row{ font-size:13px; margin:0 0 10px; }
+  .detail-row{ font-size:13px; margin:22px 0 10px; padding-top:16px; border-top:1px solid var(--line); }
   .detail-row strong{ font-weight:700; font-size:11.5px; color:var(--brand-dark); display:block; margin-bottom:2px; }
   .detail-desc{ font-size:13.5px; line-height:1.6; margin:0 0 14px; white-space:pre-wrap; word-break:break-word; }
-  .detail-price-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px; }
+  .detail-price-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; width:100%; }
   .price-pill-lg{ font-weight:900; font-size:19px; color:var(--ink); }
   .detail-actions{ display:flex; gap:8px; flex:1; flex-wrap:wrap; justify-content:flex-end; }
 
@@ -382,6 +387,7 @@
       <span class="detail-page-spacer" aria-hidden="true"></span>
     </header>
     <div class="detail-page-body" id="detailPageBody"></div>
+    <div class="detail-page-footer" id="detailPageFooter"></div>
   </div>
 </div>
 
@@ -545,14 +551,13 @@ function renderFeed(){
 
   feed.innerHTML = posts.map(p => {
     const isSell = p.type === 'sell';
-    const metaText = p.location ? escapeHtml(p.location) + ' · ' + formatDate(p.createdAt) : formatDate(p.createdAt);
     return `
     <div class="post-row" data-detail="${p.id}" role="button" tabindex="0">
       <div class="post-thumb ${!p.image ? (isSell ? 'thumb-sell' : 'thumb-buy') : ''}">${p.image ? `<img src="${p.image}" alt="">` : '🍠'}</div>
       <div class="post-main">
         <span class="post-type-label ${isSell ? 'sell' : 'buy'}">${isSell ? '팔아요' : '살게요'}</span>
         <p class="post-title corrupt-text">${escapeHtml(p.title)}</p>
-        <p class="post-meta corrupt-text">${metaText}</p>
+        <p class="post-meta corrupt-text">${formatDate(p.createdAt)}</p>
         <span class="post-price">${formatWon(p.price)}</span>
       </div>
     </div>`;
@@ -728,16 +733,19 @@ function renderDetailHtml(item){
     <p class="detail-meta">작성 ${formatDate(item.createdAt)}${isSell && closed && item.buyerName ? ' · ' + escapeHtml(item.buyerName) + '님 구매' : ''}</p>
     <p class="detail-desc corrupt-text">${item.desc ? escapeHtml(item.desc) : '설명이 없어요.'}</p>
     ${item.location ? `<p class="detail-row"><strong>거래 희망 장소</strong><span class="corrupt-text">${escapeHtml(item.location)}</span></p>` : ''}
-    <div class="detail-price-row">
-      <span class="price-pill-lg">${formatWon(item.price)}</span>
-      <div class="detail-actions">${buildDetailActions(item)}</div>
-    </div>
+  `;
+}
+function renderDetailFooterHtml(item){
+  return `
+    <span class="price-pill-lg">${formatWon(item.price)}</span>
+    <div class="detail-actions">${buildDetailActions(item)}</div>
   `;
 }
 function openDetailModal(postId){
   const item = marketData.posts.find(p => p.id === postId);
   if(!item) return;
   el('detailPageBody').innerHTML = renderDetailHtml(item);
+  el('detailPageFooter').innerHTML = renderDetailFooterHtml(item);
   el('detailPageTitle').textContent = item.type === 'sell' ? '팔아요' : '살게요';
   openDetailPage();
   bindDetailEvents(item);
