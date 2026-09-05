@@ -191,6 +191,11 @@
   .ledger-table td.num{ font-family:'Noto Sans Mono', monospace; text-align:right; }
   .ledger-table .col-job{ max-width:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ledger-table .col-applicant{ white-space:nowrap; }
+  .ledger-table.ledger-pair{ table-layout:fixed; }
+  .ledger-table.ledger-pair th:nth-child(1), .ledger-table.ledger-pair td:nth-child(1){ width:92px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ledger-table.ledger-pair th:nth-child(2), .ledger-table.ledger-pair td:nth-child(2){ width:86px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ledger-table.ledger-pair th:nth-child(4), .ledger-table.ledger-pair td:nth-child(4){ width:44px; }
+  .ledger-table.ledger-pair td.num{ white-space:nowrap; }
   .row-del{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px; }
 
   /* ---------- Floating write button ---------- */
@@ -948,13 +953,13 @@ function renderMyPageHtml(purchases, topups, applications){
       </div>` : ''}
     <p class="mypage-section-title">구매 이력</p>
     ${purchases.length === 0 ? `<p class="mypage-empty">아직 구매 기록이 없어요.</p>` : `
-      <table class="ledger-table">
+      <table class="ledger-table ledger-pair">
         <thead><tr><th>품목</th><th>구매자</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
         <tbody>${purchases.map(p => `<tr><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.buyerName)}</td><td class="num">${formatWon(p.price)}</td>${isAdmin ? `<td><button class="row-del" data-purchase-del="${p.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
       </table>`}
     <p class="mypage-section-title">구마pay 충전 내역</p>
     ${topups.length === 0 ? `<p class="mypage-empty">아직 충전된 기록이 없어요.</p>` : `
-      <table class="ledger-table">
+      <table class="ledger-table ledger-pair">
         <thead><tr><th>판매자</th><th>물건</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
         <tbody>${topups.map(t => `<tr><td>${escapeHtml(t.sellerName)}</td><td>${escapeHtml(t.itemName)}</td><td class="num">${formatWon(t.amount)}</td>${isAdmin ? `<td><button class="row-del" data-topup-del="${t.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
       </table>`}
