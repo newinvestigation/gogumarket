@@ -157,10 +157,16 @@
   .post-row:focus-visible{ outline:2px solid var(--brand-dark); outline-offset:-2px; border-radius:10px; }
   .post-row.static{ cursor:default; }
   .post-row.static:hover{ background:none; margin:0; padding:14px 2px; border-radius:0; }
-  .post-thumb{ width:76px; height:76px; border-radius:12px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .post-thumb{ position:relative; width:76px; height:76px; border-radius:12px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:26px; }
   .post-thumb img{ width:100%; height:100%; object-fit:cover; }
   .thumb-sell{ background:var(--brand-tint); }
   .thumb-buy{ background:var(--gold-tint); }
+  .thumb-closed{ filter:grayscale(1) brightness(0.85); }
+  .thumb-badge{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.45); color:#fff; font-weight:800; font-size:11px; text-align:center;
+  }
+  .post-title.is-closed{ color:var(--ink-soft); }
   .post-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
   .post-type-label{ font-weight:700; font-size:10.5px; }
   .post-type-label.sell{ color:var(--brand-dark); }
@@ -587,12 +593,17 @@ function renderFeed(){
 
   feed.innerHTML = posts.map(p => {
     const isSell = p.type === 'sell';
+    const closed = isSell ? p.status === 'sold' : p.status === 'fulfilled';
+    const badgeText = isSell ? '품절' : '구했어요';
     return `
     <div class="post-row" data-detail="${p.id}" role="button" tabindex="0">
-      <div class="post-thumb ${!p.image ? (isSell ? 'thumb-sell' : 'thumb-buy') : ''}">${p.image ? `<img src="${p.image}" alt="">` : '🍠'}</div>
+      <div class="post-thumb ${!p.image ? (isSell ? 'thumb-sell' : 'thumb-buy') : ''} ${closed ? 'thumb-closed' : ''}">
+        ${p.image ? `<img src="${p.image}" alt="">` : '🍠'}
+        ${closed ? `<span class="thumb-badge">${badgeText}</span>` : ''}
+      </div>
       <div class="post-main">
         <span class="post-type-label ${isSell ? 'sell' : 'buy'}">${isSell ? '팔아요' : '살게요'}</span>
-        <p class="post-title corrupt-text">${escapeHtml(p.title)}</p>
+        <p class="post-title corrupt-text ${closed ? 'is-closed' : ''}">${escapeHtml(p.title)}</p>
         <p class="post-meta corrupt-text">${formatDate(p.createdAt)}</p>
         <span class="post-price">${formatWon(p.price)}</span>
       </div>
@@ -938,14 +949,14 @@ function renderMyPageHtml(purchases, topups, applications){
     <p class="mypage-section-title">구매 이력</p>
     ${purchases.length === 0 ? `<p class="mypage-empty">아직 구매 기록이 없어요.</p>` : `
       <table class="ledger-table">
-        <thead><tr><th>날짜</th><th>품목</th><th>구매자</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
-        <tbody>${purchases.map(p => `<tr><td>${formatDate(p.purchasedAt)}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.buyerName)}</td><td class="num">${formatWon(p.price)}</td>${isAdmin ? `<td><button class="row-del" data-purchase-del="${p.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
+        <thead><tr><th>품목</th><th>구매자</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
+        <tbody>${purchases.map(p => `<tr><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.buyerName)}</td><td class="num">${formatWon(p.price)}</td>${isAdmin ? `<td><button class="row-del" data-purchase-del="${p.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
       </table>`}
     <p class="mypage-section-title">구마pay 충전 내역</p>
     ${topups.length === 0 ? `<p class="mypage-empty">아직 충전된 기록이 없어요.</p>` : `
       <table class="ledger-table">
-        <thead><tr><th>날짜</th><th>판매자</th><th>물건</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
-        <tbody>${topups.map(t => `<tr><td>${formatDate(t.addedAt)}</td><td>${escapeHtml(t.sellerName)}</td><td>${escapeHtml(t.itemName)}</td><td class="num">${formatWon(t.amount)}</td>${isAdmin ? `<td><button class="row-del" data-topup-del="${t.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
+        <thead><tr><th>판매자</th><th>물건</th><th>금액</th>${isAdmin ? '<th></th>' : ''}</tr></thead>
+        <tbody>${topups.map(t => `<tr><td>${escapeHtml(t.sellerName)}</td><td>${escapeHtml(t.itemName)}</td><td class="num">${formatWon(t.amount)}</td>${isAdmin ? `<td><button class="row-del" data-topup-del="${t.id}">삭제</button></td>` : ''}</tr>`).join('')}</tbody>
       </table>`}
     ${isAdmin ? `
       <p class="mypage-section-title">알바 지원 내역</p>
@@ -1099,15 +1110,21 @@ function renderDarkJobsFeedHtml(jobs){
   if(jobs.length === 0){
     return `<div class="empty">🌑 아직 올라온 알바가 없어요.${isAdmin ? ' + 버튼으로 알바를 올려보세요.' : ''}</div>`;
   }
-  return jobs.map(j => `
+  return jobs.map(j => {
+    const filled = j.status === 'filled';
+    return `
     <div class="post-row" data-djopen="${j.id}" role="button" tabindex="0">
-      <div class="post-thumb thumb-sell">🌑</div>
+      <div class="post-thumb thumb-sell ${filled ? 'thumb-closed' : ''}">
+        🌑
+        ${filled ? `<span class="thumb-badge">구했어요</span>` : ''}
+      </div>
       <div class="post-main">
-        <p class="post-title">${escapeHtml(j.title)}</p>
+        <p class="post-title ${filled ? 'is-closed' : ''}">${escapeHtml(j.title)}</p>
         <p class="post-meta">${escapeHtml(j.employerName)}</p>
         <span class="post-price">시급 ${formatWon(j.wage)}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function bindDarkJobsFeedEvents(){
   document.querySelectorAll('[data-djopen]').forEach(row => {
@@ -1118,8 +1135,12 @@ function bindDarkJobsFeedEvents(){
 
 /* ---------- 어둠 알바 상세 페이지 + 지원하기 ---------- */
 function renderDarkJobDetailFooterHtml(job){
-  let actions = `<button class="btn btn-primary" id="djApplyBtn">지원하기</button>`;
-  if(isAdmin) actions += `<button class="btn btn-ghost btn-small" id="djDetailDeleteBtn">삭제</button>`;
+  const filled = job.status === 'filled';
+  let actions = `<button class="btn btn-primary" id="djApplyBtn" ${filled ? 'disabled' : ''}>${filled ? '이미 구했어요' : '지원하기'}</button>`;
+  if(isAdmin){
+    actions += `<button class="btn btn-outline" id="djToggleBtn">${filled ? '다시 열기' : '구했어요 처리'}</button>`;
+    actions += `<button class="btn btn-ghost btn-small" id="djDetailDeleteBtn">삭제</button>`;
+  }
   return `
     <span class="price-pill-lg">시급 ${formatWon(job.wage)}</span>
     <div class="detail-actions">${actions}</div>
@@ -1128,8 +1149,10 @@ function renderDarkJobDetailFooterHtml(job){
 function openDarkJobDetail(jobId){
   const job = currentDarkJobs.find(j => j.id === jobId);
   if(!job) return;
+  const filled = job.status === 'filled';
   el('detailPageBody').innerHTML = `
     <div class="detail-image">🌑</div>
+    ${filled ? `<div class="chip-row"><span class="tag-chip tag-done">구했어요</span></div>` : ''}
     <h3>${escapeHtml(job.title)}</h3>
     <p class="detail-meta">알바를 구하는 어둠 · ${escapeHtml(job.employerName)}</p>
   `;
@@ -1139,9 +1162,26 @@ function openDarkJobDetail(jobId){
   bindDarkJobDetailEvents(job);
 }
 function bindDarkJobDetailEvents(job){
-  el('djApplyBtn').addEventListener('click', () => openDarkJobApplyModal(job));
+  const applyBtn = document.getElementById('djApplyBtn');
+  if(applyBtn && job.status !== 'filled') applyBtn.addEventListener('click', () => openDarkJobApplyModal(job));
+  const toggleBtn = document.getElementById('djToggleBtn');
+  if(toggleBtn) toggleBtn.addEventListener('click', async () => {
+    const newStatus = job.status === 'filled' ? 'open' : 'filled';
+    try{
+      await updateDoc(doc(db, 'darkjobs', job.id), { status: newStatus });
+      job.status = newStatus;
+      openDarkJobDetail(job.id);
+      refreshJobsListInPlace();
+    }catch(e){ alert('상태 변경 중 문제가 생겼어요. 다시 시도해주세요.'); }
+  });
   const delBtn = document.getElementById('djDetailDeleteBtn');
   if(delBtn) delBtn.addEventListener('click', () => openDarkJobDeleteModal(job));
+}
+function refreshJobsListInPlace(){
+  if(currentBoard === 'jobs'){
+    el('feed').innerHTML = renderDarkJobsFeedHtml(currentDarkJobs);
+    bindDarkJobsFeedEvents();
+  }
 }
 function openDarkJobDeleteModal(job){
   openModal(`
@@ -1246,7 +1286,7 @@ function openDarkJobFormModal(){
     if(!title || !employerName){ el('djError').textContent = '제목과 어둠 이름을 모두 적어주세요.'; return; }
     if(wage === '' || Number(wage) < 0){ el('djError').textContent = '시급을 올바르게 적어주세요.'; return; }
     try{
-      await addDoc(darkJobsCol, { title, employerName, wage: Number(wage), createdAt: new Date().toISOString() });
+      await addDoc(darkJobsCol, { title, employerName, wage: Number(wage), status: 'open', createdAt: new Date().toISOString() });
       closeModal();
       renderJobsBoard();
     }catch(e){ el('djError').textContent = '등록 중 문제가 생겼어요. 다시 시도해주세요.'; }
