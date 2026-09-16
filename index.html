@@ -688,29 +688,30 @@ el('newPostBtn').addEventListener('click', () => {
   else if(currentBoard === 'places') openDarkPlaceFormModal();
   else openPostModal();
 });
-function openPostModal(){
+function openPostModal(existingItem){
   if(!isAdmin) return;
-  let selectedType = 'sell';
+  const isEdit = !!existingItem;
+  let selectedType = existingItem ? existingItem.type : 'sell';
   openModal(`
-    <h3>글쓰기</h3>
+    <h3>${isEdit ? '글 수정' : '글쓰기'}</h3>
     <p class="hint">말머리를 고르고 내용을 채워주세요.</p>
     <div class="type-toggle">
-      <button type="button" class="selected sell" id="typeSellBtn">팔아요</button>
-      <button type="button" class="buy" id="typeBuyBtn">살게요</button>
+      <button type="button" class="sell ${selectedType === 'sell' ? 'selected' : ''}" id="typeSellBtn">팔아요</button>
+      <button type="button" class="buy ${selectedType === 'buy' ? 'selected' : ''}" id="typeBuyBtn">살게요</button>
     </div>
-    <div class="field"><label for="titleInput">제목</label><input type="text" id="titleInput" maxlength="60"></div>
-    <div class="field"><label for="priceInput">가격 (원)</label><input type="number" id="priceInput" min="0" step="1"></div>
-    <div class="field"><label for="locationInput">거래 희망 장소 (선택)</label><input type="text" id="locationInput" maxlength="40" placeholder="예: 게시판 앞, 여관 로비"></div>
-    <div class="field"><label for="descInput">설명 (선택)</label><textarea id="descInput" maxlength="300"></textarea></div>
+    <div class="field"><label for="titleInput">제목</label><input type="text" id="titleInput" maxlength="60" value="${existingItem ? escapeHtml(existingItem.title) : ''}"></div>
+    <div class="field"><label for="priceInput">가격 (원)</label><input type="number" id="priceInput" min="0" step="1" value="${existingItem ? existingItem.price : ''}"></div>
+    <div class="field"><label for="locationInput">거래 희망 장소 (선택)</label><input type="text" id="locationInput" maxlength="40" placeholder="예: 게시판 앞, 여관 로비" value="${existingItem && existingItem.location ? escapeHtml(existingItem.location) : ''}"></div>
+    <div class="field"><label for="descInput">설명 (선택)</label><textarea id="descInput" maxlength="300">${existingItem && existingItem.desc ? escapeHtml(existingItem.desc) : ''}</textarea></div>
     <div class="field">
       <label for="imageInput">사진 (선택)</label>
       <input type="file" id="imageInput" accept="image/*">
-      <img class="img-preview" id="imgPreview" alt="미리보기">
+      <img class="img-preview" id="imgPreview" alt="미리보기" ${existingItem && existingItem.image ? `src="${existingItem.image}" style="display:block;"` : ''}>
     </div>
     <p class="error-msg" id="postError"></p>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="postCancel">취소</button>
-      <button class="btn btn-primary" id="postSubmit">등록하기</button>
+      <button class="btn btn-primary" id="postSubmit">${isEdit ? '수정하기' : '등록하기'}</button>
     </div>
   `);
   el('titleInput').focus();
@@ -736,15 +737,28 @@ function openPostModal(){
     if(!title){ el('postError').textContent = '제목을 적어주세요.'; return; }
     if(price === '' || Number(price) < 0){ el('postError').textContent = '가격을 올바르게 적어주세요.'; return; }
     const file = el('imageInput').files[0];
-    const image = file ? (el('imgPreview').src.startsWith('data:') ? el('imgPreview').src : await imageFileToDataUrl(file)) : '';
+    let image = existingItem ? (existingItem.image || '') : '';
+    if(file){
+      const dataUrl = await imageFileToDataUrl(file);
+      if(dataUrl) image = dataUrl;
+    }
     try{
-      await addDoc(postsCol, {
-        type: selectedType, title, price: Number(price), location, desc, image,
-        status: selectedType === 'sell' ? 'available' : 'open',
-        createdAt: new Date().toISOString()
-      });
-      closeModal();
-    }catch(e){ el('postError').textContent = '등록 중 문제가 생겼어요. 다시 시도해주세요.'; }
+      if(isEdit){
+        const fields = { type: selectedType, title, price: Number(price), location, desc, image };
+        if(selectedType !== existingItem.type) fields.status = selectedType === 'sell' ? 'available' : 'open';
+        await updateDoc(doc(db, 'posts', existingItem.id), fields);
+        Object.assign(existingItem, fields);
+        closeModal();
+        openDetailModal(existingItem.id);
+      }else{
+        await addDoc(postsCol, {
+          type: selectedType, title, price: Number(price), location, desc, image,
+          status: selectedType === 'sell' ? 'available' : 'open',
+          createdAt: new Date().toISOString()
+        });
+        closeModal();
+      }
+    }catch(e){ el('postError').textContent = (isEdit ? '수정' : '등록') + ' 중 문제가 생겼어요. 다시 시도해주세요.'; }
   });
   el('postCancel').addEventListener('click', closeModal);
 }
@@ -768,6 +782,7 @@ function buildDetailActions(item){
     html += `<button class="btn btn-outline" id="detailToggleBtn">${closed ? '다시 열기' : '완료 처리'}</button>`;
   }
   if(isAdmin){
+    html += `<button class="btn btn-ghost btn-small" id="detailEditBtn">수정</button>`;
     html += `<button class="btn btn-ghost btn-small" id="detailDeleteBtn">삭제</button>`;
   }
   return html;
@@ -819,6 +834,8 @@ function bindDetailEvents(item){
       openDetailModal(item.id);
     }catch(e){ alert('상태 변경 중 문제가 생겼어요. 다시 시도해주세요.'); }
   });
+  const editBtn = document.getElementById('detailEditBtn');
+  if(editBtn) editBtn.addEventListener('click', () => openPostModal(item));
   const delBtn = document.getElementById('detailDeleteBtn');
   if(delBtn) delBtn.addEventListener('click', () => openDeleteModal(item.id));
 }
