@@ -234,6 +234,16 @@
   .admin-corner-btn:hover{ opacity:1; border-color:var(--brand); }
   .admin-corner-btn.on{ background:var(--brand); color:#fff; border-color:var(--brand); opacity:1; }
 
+  /* ---------- Site entry gate ---------- */
+  .gate-overlay{ position:fixed; inset:0; z-index:100; background:#F1F1F3; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .gate-overlay[hidden]{ display:none; }
+  .gate-card{ background:var(--card); border-radius:24px; padding:34px 26px; max-width:320px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(29,30,34,0.16); }
+  .gate-mascot{ width:64px; height:64px; margin-bottom:10px; }
+  .gate-card h2{ font-weight:900; font-size:22px; color:var(--brand); margin:0 0 4px; }
+  .gate-card p.hint{ margin:0 0 18px; font-size:12.5px; color:var(--ink-soft); text-align:center; }
+  .gate-card .field{ text-align:left; }
+  .gate-card button:disabled{ opacity:0.55; cursor:default; }
+
   /* ---------- Modal ---------- */
   .overlay{ position:absolute; inset:0; background:rgba(29,30,34,0.4); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
   .overlay[hidden]{ display:none; }
@@ -312,6 +322,26 @@
 </style>
 </head>
 <body>
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <svg class="gate-mascot" viewBox="0 0 100 100" aria-hidden="true">
+      <ellipse cx="52" cy="20" rx="10" ry="6" fill="#8ED37B" transform="rotate(-20 52 20)"/>
+      <ellipse cx="60" cy="16" rx="7" ry="4" fill="#7BC46A" transform="rotate(15 60 16)"/>
+      <path d="M18,58 C12,32 32,12 54,16 C80,21 90,46 80,68 C72,86 42,92 25,80 C13,72 13,66 18,58 Z" fill="url(#gGate)"/>
+      <defs><linearGradient id="gGate" x1="10" y1="10" x2="90" y2="90"><stop offset="0" stop-color="#B79CFF"/><stop offset="1" stop-color="#8452D6"/></linearGradient></defs>
+      <ellipse cx="38" cy="62" rx="7" ry="4.5" fill="#FFB6C9" opacity="0.65"/>
+      <ellipse cx="66" cy="58" rx="7" ry="4.5" fill="#FFB6C9" opacity="0.65"/>
+      <circle cx="43" cy="52" r="3.4" fill="#3B1F63"/>
+      <circle cx="64" cy="49" r="3.4" fill="#3B1F63"/>
+      <path d="M48,63 Q54,68 60,61" stroke="#3B1F63" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <h2>구마</h2>
+    <p class="hint">비밀번호를 입력해야 들어갈 수 있어요.</p>
+    <div class="field"><label for="gatePwInput">비밀번호</label><input type="password" id="gatePwInput" autocomplete="off" disabled placeholder="불러오는 중…"></div>
+    <p class="error-msg" id="gateError"></p>
+    <button class="btn btn-primary" id="gateSubmitBtn" style="width:100%;" disabled>입장하기</button>
+  </div>
+</div>
 <div class="app" id="app">
 
   <header class="topbar">
@@ -430,7 +460,8 @@ const firebaseConfig = {
   messagingSenderId: "144928327825",
   appId: "1:144928327825:web:6f4a456110d2de656d1730"
 };
-const ADMIN_PASSWORD = "goguma1234"; // 이 커뮤니티만 아는 암호로 바꿔서 쓰세요.
+const DEFAULT_SITE_PASSWORD = "goguma"; // 첫 실행 시 기본 입장 비밀번호. 관리자 모드 > 마이페이지에서 바꿀 수 있어요.
+const DEFAULT_ADMIN_PASSWORD = "goguma1234"; // 첫 실행 시 기본 관리자 비밀번호. 마찬가지로 마이페이지에서 바꿀 수 있어요.
 const MAX_IMG_DIM = 480;
 const IMG_QUALITY = 0.72;
 
@@ -445,6 +476,9 @@ let isAdmin = false;
 let currentFilter = 'all';
 let currentBoard = 'market'; // 'market' | 'jobs'
 let corruptedMode = false;
+let sitePassword = DEFAULT_SITE_PASSWORD;
+let adminPassword = DEFAULT_ADMIN_PASSWORD;
+let gateReady = false;
 let db = null, postsCol = null, walletRef = null, purchasesCol = null, topupsCol = null, settingsRef = null, darkJobsCol = null, darkPlacesCol = null, darkJobApplicationsCol = null;
 let currentDarkJobs = [];
 
@@ -638,6 +672,29 @@ el('homeTabBtn').addEventListener('click', () => {
   el('feed').closest('main').scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+/* ---------- Site entry gate ---------- */
+function markGateReady(){
+  gateReady = true;
+  el('gatePwInput').disabled = false;
+  el('gatePwInput').placeholder = '비밀번호';
+  el('gateSubmitBtn').disabled = false;
+}
+function submitGate(){
+  if(!gateReady) return;
+  const val = el('gatePwInput').value;
+  if(val === adminPassword){
+    isAdmin = true;
+    el('gateOverlay').hidden = true;
+    render();
+  }else if(val === sitePassword){
+    el('gateOverlay').hidden = true;
+  }else{
+    el('gateError').textContent = '비밀번호가 맞지 않아요.';
+  }
+}
+el('gateSubmitBtn').addEventListener('click', submitGate);
+el('gatePwInput').addEventListener('keydown', (e) => { if(e.key==='Enter') submitGate(); });
+
 /* ---------- Modal helpers ---------- */
 function openModal(html){ el('modalBody').innerHTML = html; el('overlay').hidden = false; }
 function closeModal(){ el('overlay').hidden = true; el('modalBody').innerHTML = ''; }
@@ -674,7 +731,7 @@ el('adminToggleBtn').addEventListener('click', () => {
   `);
   const input = el('pwInput'); input.focus();
   const submit = () => {
-    if(input.value === ADMIN_PASSWORD){ isAdmin = true; closeModal(); render(); }
+    if(input.value === adminPassword){ isAdmin = true; closeModal(); render(); }
     else{ el('pwError').textContent = '암호가 맞지 않아요. 다시 확인해주세요.'; }
   };
   el('pwSubmit').addEventListener('click', submit);
@@ -987,6 +1044,11 @@ function renderMyPageHtml(purchases, topups, applications){
           <thead><tr><th class="col-job">알바</th><th class="col-applicant">지원자</th><th>한마디</th><th></th></tr></thead>
           <tbody>${applications.map(a => `<tr><td class="col-job" title="${escapeHtml(a.jobTitle)}">${escapeHtml(a.jobTitle)}</td><td class="col-applicant">${escapeHtml(a.applicantName)}</td><td>${a.message ? escapeHtml(a.message) : '-'}</td><td><button class="row-del" data-djapp-del="${a.id}">삭제</button></td></tr>`).join('')}</tbody>
         </table>`}
+      <p class="mypage-section-title">비밀번호 관리</p>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-outline" id="sitePwBtn" style="flex:1;">입장 비밀번호 변경</button>
+        <button class="btn btn-outline" id="adminPwBtn" style="flex:1;">관리자 비밀번호 변경</button>
+      </div>
     ` : ''}
     <div class="modal-actions"><button class="btn btn-ghost" id="mypageClose">닫기</button></div>
   `;
@@ -997,6 +1059,10 @@ function bindMyPageEvents(){
   if(chargeBtn) chargeBtn.addEventListener('click', openChargeModal);
   const deductBtn = document.getElementById('deductBtn');
   if(deductBtn) deductBtn.addEventListener('click', openDeductModal);
+  const sitePwBtn = document.getElementById('sitePwBtn');
+  if(sitePwBtn) sitePwBtn.addEventListener('click', () => openChangePasswordModal('site'));
+  const adminPwBtn = document.getElementById('adminPwBtn');
+  if(adminPwBtn) adminPwBtn.addEventListener('click', () => openChangePasswordModal('admin'));
   document.querySelectorAll('[data-topup-del]').forEach(b => {
     b.addEventListener('click', async () => {
       try{ await deleteDoc(doc(db, 'topups', b.dataset.topupDel)); }
@@ -1018,6 +1084,33 @@ function bindMyPageEvents(){
       await openMyPage();
     });
   });
+}
+
+/* ---------- Password management (site entry / admin) ---------- */
+function openChangePasswordModal(kind){
+  if(!isAdmin) return;
+  const isSite = kind === 'site';
+  const label = isSite ? '입장 비밀번호' : '관리자 비밀번호';
+  openModal(`
+    <h3>${label} 변경</h3>
+    <p class="hint">${isSite ? '동네 사람들이 사이트에 들어올 때 쓰는 비밀번호예요.' : '관리자로 로그인할 때 쓰는 비밀번호예요.'}</p>
+    <div class="field"><label for="pwChangeInput">새 비밀번호</label><input type="text" id="pwChangeInput" maxlength="40"></div>
+    <p class="error-msg" id="pwChangeError"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="pwChangeCancel">취소</button>
+      <button class="btn btn-primary" id="pwChangeSubmit">변경하기</button>
+    </div>
+  `);
+  el('pwChangeInput').focus();
+  el('pwChangeSubmit').addEventListener('click', async () => {
+    const val = el('pwChangeInput').value.trim();
+    if(!val){ el('pwChangeError').textContent = '비밀번호를 입력해주세요.'; return; }
+    try{
+      await setDoc(settingsRef, { [isSite ? 'sitePassword' : 'adminPassword']: val }, { merge: true });
+      await openMyPage();
+    }catch(e){ el('pwChangeError').textContent = '변경 중 문제가 생겼어요. 다시 시도해주세요.'; }
+  });
+  el('pwChangeCancel').addEventListener('click', async () => { await openMyPage(); });
 }
 
 /* ---------- Charge (admin adds money, Firestore transaction) ---------- */
@@ -1391,7 +1484,7 @@ el('corruptToggleBtn').addEventListener('click', async () => {
 /* ---------- Boot (Firebase realtime listeners) ---------- */
 function boot(){
   render();
-  if(!isConfigured) return;
+  if(!isConfigured){ markGateReady(); return; }
   const app = initializeApp(firebaseConfig);
   db = getFirestore(app);
   postsCol = collection(db, 'posts');
@@ -1420,7 +1513,11 @@ function boot(){
 
   let settingsInitialized = false;
   onSnapshot(settingsRef, (snap) => {
-    const newVal = snap.exists() ? !!snap.data().corrupted : false;
+    const data = snap.exists() ? snap.data() : {};
+    sitePassword = data.sitePassword || DEFAULT_SITE_PASSWORD;
+    adminPassword = data.adminPassword || DEFAULT_ADMIN_PASSWORD;
+    if(!gateReady) markGateReady();
+    const newVal = !!data.corrupted;
     const applyMode = () => {
       corruptedMode = newVal;
       document.documentElement.classList.toggle('corrupted', corruptedMode);
