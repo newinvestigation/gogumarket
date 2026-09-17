@@ -585,17 +585,20 @@ function updateSectionHeadActions(){
   if(currentBoard === 'jobs' && isAdmin){
     actions.innerHTML = `<button class="btn btn-ghost btn-small" id="djAppsBtn">지원 내역</button>`;
     el('djAppsBtn').addEventListener('click', openDarkJobApplicationsModal);
+  }else if(currentBoard === 'market'){
+    actions.innerHTML = `<button class="btn btn-ghost btn-small" id="marketRefreshBtn">↻ 새로고침</button>`;
+    el('marketRefreshBtn').addEventListener('click', () => refreshMarketFeed());
   }else{
     actions.innerHTML = '';
   }
 }
-function showMarketBoard(){
+async function showMarketBoard(){
   currentBoard = 'market';
   el('filtersNav').hidden = false;
   el('boardTitle').textContent = '동네 게시판';
   setActiveTab(el('homeTabBtn'));
   updateSectionHeadActions();
-  renderFeed();
+  await refreshMarketFeed();
 }
 async function showJobsBoard(){
   currentBoard = 'jobs';
@@ -612,6 +615,20 @@ async function showPlacesBoard(){
   updateSectionHeadActions();
   setActiveTab(el('darkNearBtn'));
   await renderPlacesBoard();
+}
+
+async function fetchPosts(){
+  const snap = await getDocs(query(postsCol, orderBy('createdAt', 'desc')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function refreshMarketFeed(){
+  try{
+    marketData.posts = await fetchPosts();
+    renderFeed();
+  }catch(err){
+    console.error(err);
+    el('feed').innerHTML = `<div class="empty">⚠️ 데이터를 불러오지 못했어요. Firebase 설정과 보안 규칙을 확인해주세요.</div>`;
+  }
 }
 
 function renderFeed(){
@@ -804,9 +821,10 @@ function openPostModal(existingItem){
         const fields = { type: selectedType, title, price: Number(price), location, desc, image };
         if(selectedType !== existingItem.type) fields.status = selectedType === 'sell' ? 'available' : 'open';
         await updateDoc(doc(db, 'posts', existingItem.id), fields);
-        Object.assign(existingItem, fields);
+        const editedId = existingItem.id;
         closeModal();
-        openDetailModal(existingItem.id);
+        await refreshMarketFeed();
+        openDetailModal(editedId);
       }else{
         await addDoc(postsCol, {
           type: selectedType, title, price: Number(price), location, desc, image,
@@ -814,6 +832,7 @@ function openPostModal(existingItem){
           createdAt: new Date().toISOString()
         });
         closeModal();
+        await refreshMarketFeed();
       }
     }catch(e){ el('postError').textContent = (isEdit ? '수정' : '등록') + ' 중 문제가 생겼어요. 다시 시도해주세요.'; }
   });
@@ -885,10 +904,11 @@ function bindDetailEvents(item){
   const toggleBtn = document.getElementById('detailToggleBtn');
   if(toggleBtn) toggleBtn.addEventListener('click', async () => {
     const newStatus = item.status === 'fulfilled' ? 'open' : 'fulfilled';
+    const itemId = item.id;
     try{
-      await updateDoc(doc(db, 'posts', item.id), { status: newStatus });
-      item.status = newStatus;
-      openDetailModal(item.id);
+      await updateDoc(doc(db, 'posts', itemId), { status: newStatus });
+      await refreshMarketFeed();
+      openDetailModal(itemId);
     }catch(e){ alert('상태 변경 중 문제가 생겼어요. 다시 시도해주세요.'); }
   });
   const editBtn = document.getElementById('detailEditBtn');
@@ -953,6 +973,7 @@ function openBuyModal(postId){
       await performPurchase(item.id, buyerName);
       closeModal();
       closeDetailPage();
+      refreshMarketFeed();
     }catch(e){
       if(e.message === 'sold') el('buyError').textContent = '앗, 방금 다른 사람이 먼저 구매했어요.';
       else if(e.message === 'short') el('buyError').textContent = '그 사이 구마pay가 부족해졌어요.';
@@ -979,6 +1000,7 @@ function openDeleteModal(postId){
       await deleteDoc(doc(db, 'posts', postId));
       closeModal();
       closeDetailPage();
+      refreshMarketFeed();
     }catch(e){ alert('삭제 중 문제가 생겼어요. 다시 시도해주세요.'); }
   });
   el('delCancel').addEventListener('click', closeModal);
@@ -1496,13 +1518,11 @@ function boot(){
   darkPlacesCol = collection(db, 'darkplaces');
   darkJobApplicationsCol = collection(db, 'darkjobapplications');
 
-  onSnapshot(query(postsCol, orderBy('createdAt', 'desc')), (snap) => {
-    marketData.posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFeed();
-  }, (err) => {
-    console.error(err);
-    el('feed').innerHTML = `<div class="empty">⚠️ 데이터를 불러오지 못했어요. Firebase 설정과 보안 규칙을 확인해주세요.</div>`;
-  });
+  // 게시글 목록은 실시간 구독 대신 필요할 때만(최초 로드/홈 탭 진입/새로고침 버튼/글쓰기·수정·삭제·구매 직후) 다시 읽어와요.
+  // 늘 켜둔 실시간 구독은 탭을 열고 닫을 때마다, 특히 여러 명이 동시에 쓰는 모바일 환경에서 백그라운드↔포그라운드를
+  // 전환될 때마다 전체 목록을 다시 읽어들여 Firestore 읽기 사용량을 크게 늘려요. 구마pay 잔액/오염 모드는 문서 하나만
+  // 보는 가벼운 구독이라 그대로 실시간으로 유지해요.
+  refreshMarketFeed();
 
   onSnapshot(walletRef, (snap) => {
     marketData.balance = snap.exists() ? (snap.data().balance || 0) : 0;
