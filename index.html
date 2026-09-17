@@ -1147,7 +1147,7 @@ function openChargeModal(){
     try{
       await performCharge(sellerName, itemName, Number(amount));
       await openMyPage();
-    }catch(e){ el('chargeError').textContent = '충전 중 문제가 생겼어요. 다시 시도해주세요.'; }
+    }catch(e){ console.error(e); el('chargeError').textContent = '충전 중 문제가 생겼어요: ' + (e.code || e.message || '알 수 없는 오류'); }
   });
   el('chargeCancel').addEventListener('click', async () => { await openMyPage(); });
 }
